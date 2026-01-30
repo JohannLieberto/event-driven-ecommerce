@@ -1,2 +1,2 @@
-# event-driven-ecommerce
+# Event-driven-ecommerce
 event-driven microservices order processing platform
