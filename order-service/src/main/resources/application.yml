@@ -4,8 +4,8 @@ spring:
   
   datasource:
     url: jdbc:postgresql://localhost:5432/order_db
-    username: postgres
-    password: postgres
+    username: maheendranpadmakumar
+    password:
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -30,3 +30,17 @@ logging:
   level:
     com.ecommerce.orderservice: DEBUG
     org.hibernate.SQL: DEBUG
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
