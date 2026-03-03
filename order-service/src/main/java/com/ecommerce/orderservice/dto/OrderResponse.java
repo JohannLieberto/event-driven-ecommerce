@@ -6,7 +6,7 @@ import java.util.List;
 public class OrderResponse {
 
     private Long id;
-    private String customerId;
+    private Long customerId;
     private List<OrderItemResponse> items;
     private String status;
     private LocalDateTime createdAt;
@@ -24,11 +24,11 @@ public class OrderResponse {
         this.id = id;
     }
 
-    public String getCustomerId() {
+    public Long getCustomerId() {
         return customerId;
     }
 
-    public void setCustomerId(String customerId) {
+    public void setCustomerId(Long customerId) {
         this.customerId = customerId;
     }
 

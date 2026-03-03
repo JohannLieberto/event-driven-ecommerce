@@ -9,7 +9,7 @@ import java.util.List;
 public class OrderRequest {
 
     @NotNull(message = "Customer ID is required")
-    private String customerId;
+    private Long customerId;
 
     @NotEmpty(message = "Order must contain at least one item")
     @Valid
@@ -19,11 +19,11 @@ public class OrderRequest {
     public OrderRequest() {}
 
     // Getters and Setters
-    public String getCustomerId() {
+    public Long getCustomerId() {
         return customerId;
     }
 
-    public void setCustomerId(String customerId) {
+    public void setCustomerId(Long customerId) {
         this.customerId = customerId;
     }
 

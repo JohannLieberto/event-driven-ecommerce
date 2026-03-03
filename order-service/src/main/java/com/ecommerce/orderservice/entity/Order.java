@@ -19,7 +19,7 @@ public class Order {
     private Long id;
 
     @Column(nullable = false)
-    private String customerId;
+    private Long customerId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
@@ -48,11 +48,11 @@ public class Order {
         this.id = id;
     }
 
-    public String getCustomerId() {
+    public Long getCustomerId() {
         return customerId;
     }
 
-    public void setCustomerId(String customerId) {
+    public void setCustomerId(Long customerId) {
         this.customerId = customerId;
     }
 

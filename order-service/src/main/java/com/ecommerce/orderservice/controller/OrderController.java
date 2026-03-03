@@ -32,7 +32,7 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getOrdersByCustomer(
-            @RequestParam String customerId) {
+            @RequestParam Long customerId) {
         List<OrderResponse> orders = orderService.getOrdersByCustomerId(customerId);
         return ResponseEntity.ok(orders);
     }

@@ -37,7 +37,7 @@ class OrderServiceTest {
     void createOrder_Success() {
         // Arrange
         OrderRequest request = new OrderRequest();
-        request.setCustomerId("CUST001");
+        request.setCustomerId(1001L);
 
         List<OrderItemRequest> items = new ArrayList<>();
         OrderItemRequest item = new OrderItemRequest();
@@ -48,7 +48,7 @@ class OrderServiceTest {
 
         Order savedOrder = new Order();
         savedOrder.setId(1L);
-        savedOrder.setCustomerId("CUST001");
+        savedOrder.setCustomerId(1001L);
         savedOrder.setStatus("PENDING");
 
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
@@ -59,7 +59,7 @@ class OrderServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals("CUST001", response.getCustomerId());
+        assertEquals(1001L, response.getCustomerId());
         assertEquals("PENDING", response.getStatus());
         verify(orderRepository, times(1)).save(any(Order.class));
     }
@@ -69,7 +69,7 @@ class OrderServiceTest {
         // Arrange
         Order order = new Order();
         order.setId(1L);
-        order.setCustomerId("CUST001");
+        order.setCustomerId(1001L);
         order.setStatus("PENDING");
         order.setItems(new ArrayList<>());
 
@@ -81,7 +81,7 @@ class OrderServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals("CUST001", response.getCustomerId());
+        assertEquals(1001L, response.getCustomerId());
     }
 
     @Test

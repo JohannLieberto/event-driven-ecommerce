@@ -54,7 +54,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getOrdersByCustomerId(String customerId) {
+    public List<OrderResponse> getOrdersByCustomerId(Long customerId) {
         List<Order> orders = orderRepository.findByCustomerId(customerId);
         return orders.stream()
             .map(this::mapToResponse)
