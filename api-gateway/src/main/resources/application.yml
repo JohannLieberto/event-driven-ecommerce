@@ -51,3 +51,7 @@ management:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+
+jwt:
+  secret: bXlzZWNyZXRrZXlteXNlY3JldGtleW15c2VjcmV0a2V5bXlzZWNyZXQ=
+  expiration: 86400000

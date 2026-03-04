@@ -3,6 +3,7 @@ package com.ecommerce.apigateway.exception;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -56,10 +57,18 @@ public class GlobalErrorHandler implements ErrorWebExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 response.getStatusCode().value(),
-                message
+                message,
+                null
+
         );
 
-        byte[] bytes = new ObjectMapper().writeValueAsBytes(error);
+        byte[] bytes;
+
+        try {
+            bytes = new ObjectMapper().writeValueAsBytes(error);
+        } catch (Exception e) {
+            bytes = "{\"message\":\"Internal error\"}".getBytes();
+        }
         DataBuffer buffer = response.bufferFactory().wrap(bytes);
 
         return response.writeWith(Mono.just(buffer));
