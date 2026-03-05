@@ -1,5 +1,6 @@
 # Maven
 target/
+**/target/
 
 # Logs
 *.log
@@ -12,3 +13,7 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build
+*.jar
+*.class
