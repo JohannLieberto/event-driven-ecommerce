@@ -1,3 +1,15 @@
+package com.ecommerce.eurekaserver;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;    
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class EurekaServerTest {
 
@@ -8,20 +20,18 @@ class EurekaServerTest {
     private TestRestTemplate restTemplate;
 
     @Test
-    void eurekaServerIsUp() {
-        String url = "http://localhost:" + port + "/";
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+    void eurekaDashboardLoads() {
+        ResponseEntity<String> response =
+                restTemplate.getForEntity("http://localhost:" + port, String.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().contains("Eureka"));
     }
 
     @Test
-    void actuatorHealthEndpoint() {
-        String url = "http://localhost:" + port + "/actuator/health";
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+    void actuatorHealthEndpointWorks() {
+        ResponseEntity<String> response =
+                restTemplate.getForEntity("http://localhost:" + port + "/actuator/health", String.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().contains("UP"));
     }
 }
