@@ -13,6 +13,16 @@
     <name>event-driven-ecommerce</name>
 
     <!-- Spring Boot Parent -->
+    <modules>
+        <module>order-service</module>
+        <module>eureka-server</module>
+        <!--<module>inventory-service</module>
+
+        <module>config-server</module>
+        <module>api-gateway</module>-->
+    </modules>
+
+>>>>>>> feature/US9-eureka-setup
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -21,12 +31,16 @@
     </parent>
 
     <!-- Java Version -->
+    </parent>
+
+>>>>>>> feature/US9-eureka-setup
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
     </properties>
 
     <!-- Spring Cloud Dependency Management -->
+>>>>>>> feature/US9-eureka-setup
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -49,4 +63,6 @@
         <!-- <module>api-gateway</module> -->
     </modules>
 
+
+>>>>>>> feature/US9-eureka-setup
 </project>
