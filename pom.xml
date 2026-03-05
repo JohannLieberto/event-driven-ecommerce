@@ -45,8 +45,7 @@
         <module>inventory-service</module>
         <module>eureka-server</module>
         <module>config-server</module>
-        <!-- Later -->
-        <!-- <module>api-gateway</module> -->
+        <module>api-gateway</module>
     </modules>
 
 </project>
