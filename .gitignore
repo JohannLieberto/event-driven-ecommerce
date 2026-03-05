@@ -17,3 +17,7 @@ Thumbs.db
 # Build
 *.jar
 *.class
+
+.idea/
+target/
+.DS_Store
