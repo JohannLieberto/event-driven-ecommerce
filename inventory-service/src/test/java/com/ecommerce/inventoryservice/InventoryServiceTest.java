@@ -33,9 +33,10 @@ class InventoryServiceTest {
 
     @Test
     void createProduct_ValidRequest_Success() {
+
         ProductRequest request = new ProductRequest();
         request.setName("Laptop");
-        request.setDescription("High-performance laptop");
+        request.setDescription("High performance laptop");
         request.setPrice(new BigDecimal("999.99"));
         request.setStockQuantity(50);
 
@@ -48,9 +49,11 @@ class InventoryServiceTest {
 
     @Test
     void getProductById_ExistingProduct_Success() {
+
         Product product = createTestProduct();
 
-        ProductResponse response = inventoryService.getProductById(product.getId());
+        ProductResponse response =
+                inventoryService.getProductById(product.getId());
 
         assertEquals(product.getId(), response.getId());
         assertEquals(product.getName(), response.getName());
@@ -58,12 +61,16 @@ class InventoryServiceTest {
 
     @Test
     void getProductById_NonExistentProduct_ThrowsException() {
-        assertThrows(ProductNotFoundException.class,
-                () -> inventoryService.getProductById(999L));
+
+        assertThrows(
+                ProductNotFoundException.class,
+                () -> inventoryService.getProductById(999L)
+        );
     }
 
     @Test
     void updateProduct_ExistingProduct_Success() {
+
         Product product = createTestProduct();
 
         ProductRequest updateRequest = new ProductRequest();
@@ -71,8 +78,8 @@ class InventoryServiceTest {
         updateRequest.setPrice(new BigDecimal("1299.99"));
         updateRequest.setStockQuantity(75);
 
-        ProductResponse response = inventoryService.updateProduct(
-                product.getId(), updateRequest);
+        ProductResponse response =
+                inventoryService.updateProduct(product.getId(), updateRequest);
 
         assertEquals("Updated Product", response.getName());
         assertEquals(75, response.getStockQuantity());
@@ -80,6 +87,7 @@ class InventoryServiceTest {
 
     @Test
     void deleteProduct_ExistingProduct_Success() {
+
         Product product = createTestProduct();
 
         inventoryService.deleteProduct(product.getId());
@@ -88,10 +96,12 @@ class InventoryServiceTest {
     }
 
     private Product createTestProduct() {
+
         Product product = new Product();
         product.setName("Test Product");
         product.setPrice(new BigDecimal("99.99"));
         product.setStockQuantity(10);
+
         return productRepository.save(product);
     }
 }
