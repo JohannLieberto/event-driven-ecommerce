@@ -3,6 +3,7 @@ package com.ecommerce.inventoryservice;
 import com.ecommerce.inventoryservice.dto.ProductResponse;
 import com.ecommerce.inventoryservice.dto.StockReservationRequest;
 import com.ecommerce.inventoryservice.entity.Product;
+import org.springframework.test.context.ActiveProfiles;
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.repository.ProductRepository;
 import com.ecommerce.inventoryservice.service.InventoryService;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class StockReservationTest {
 
     @Autowired
