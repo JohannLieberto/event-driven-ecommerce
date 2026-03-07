@@ -1,5 +1,7 @@
 package com.ecommerce.inventoryservice.controller;
 
+import com.ecommerce.inventoryservice.dto.BulkUpdateRequest;
+import com.ecommerce.inventoryservice.dto.BulkUpdateResponse;
 import com.ecommerce.inventoryservice.dto.ProductRequest;
 import com.ecommerce.inventoryservice.dto.ProductResponse;
 import com.ecommerce.inventoryservice.service.InventoryService;
@@ -12,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -59,5 +60,18 @@ public class InventoryController {
 
         inventoryService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkUpdateResponse> bulkUpdateStock(
+            @Valid @RequestBody BulkUpdateRequest request) {
+
+        BulkUpdateResponse response = inventoryService.bulkUpdateStock(request);
+
+        if (response.getFailureCount() > 0) {
+            return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 }
