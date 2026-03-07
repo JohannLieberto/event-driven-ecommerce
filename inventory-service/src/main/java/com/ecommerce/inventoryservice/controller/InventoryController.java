@@ -1,11 +1,17 @@
 package com.ecommerce.inventoryservice.controller;
 
+import com.ecommerce.inventoryservice.dto.BulkUpdateRequest;
+import com.ecommerce.inventoryservice.dto.BulkUpdateResponse;
 import com.ecommerce.inventoryservice.dto.ProductRequest;
 import com.ecommerce.inventoryservice.dto.ProductResponse;
 import com.ecommerce.inventoryservice.service.InventoryService;
+
 import jakarta.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,52 +20,58 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/inventory")
 public class InventoryController {
 
-    private final InventoryService inventoryService;
+    @Autowired
+    private InventoryService inventoryService;
 
-    public InventoryController(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
-
-    // Create Product
+    // CREATE PRODUCT
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(
             @Valid @RequestBody ProductRequest request) {
 
         ProductResponse response = inventoryService.createProduct(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Get Product by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-
-        ProductResponse response = inventoryService.getProductById(id);
-        return ResponseEntity.ok(response);
-    }
-
-    // Get All Products (Pagination)
+    // GET ALL PRODUCTS
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getAllProducts(Pageable pageable) {
 
-        Page<ProductResponse> products = inventoryService.getAllProducts(pageable);
+        Page<ProductResponse> products =
+                inventoryService.getAllProducts(pageable);
+
         return ResponseEntity.ok(products);
     }
 
-    // Update Product
+    // UPDATE PRODUCT
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request) {
 
-        ProductResponse response = inventoryService.updateProduct(id, request);
+        ProductResponse response =
+                inventoryService.updateProduct(id, request);
+
         return ResponseEntity.ok(response);
     }
 
-    // Delete Product
+    // DELETE PRODUCT
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
 
         inventoryService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkUpdateResponse> bulkUpdateStock(
+            @Valid @RequestBody BulkUpdateRequest request) {
+
+        BulkUpdateResponse response = inventoryService.bulkUpdateStock(request);
+
+        if (response.getFailureCount() > 0) {
+            return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 }
