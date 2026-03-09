@@ -1,10 +1,11 @@
-
 package com.ecommerce.orderservice.service;
 
+import com.ecommerce.orderservice.client.InventoryClient;
 import com.ecommerce.orderservice.dto.*;
 import com.ecommerce.orderservice.entity.Order;
 import com.ecommerce.orderservice.entity.OrderItem;
 import com.ecommerce.orderservice.exception.OrderNotFoundException;
+import com.ecommerce.orderservice.exception.InsufficientStockException;
 import com.ecommerce.orderservice.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,31 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private InventoryClient inventoryClient;
 
     public OrderResponse createOrder(OrderRequest request) {
-        // Create new order
+        // STEP 1: Validate stock for all items BEFORE creating order
+        for (OrderItemRequest itemRequest : request.getItems()) {
+            boolean hasStock = inventoryClient.checkStock(
+                itemRequest.getProductId(), 
+                itemRequest.getQuantity()
+            );
+            
+            if (!hasStock) {
+                throw new InsufficientStockException(
+                    "Insufficient stock for product " + itemRequest.getProductId()
+                );
+            }
+        }
+        
+        // STEP 2: Create order entity
         Order order = new Order();
         order.setCustomerId(request.getCustomerId());
         order.setStatus("PENDING");
 
-        // Map items from request
+        // Map order items
         List<OrderItem> items = request.getItems().stream()
             .map(itemRequest -> {
                 OrderItem item = new OrderItem();
@@ -38,11 +56,23 @@ public class OrderService {
 
         order.setItems(items);
 
-        // Save to database
+        // STEP 3: Save order to database
         Order savedOrder = orderRepository.save(order);
 
-        // Return response
-        return mapToResponse(savedOrder);
+        // STEP 4: Reserve stock in inventory service
+        for (OrderItemRequest itemRequest : request.getItems()) {
+            inventoryClient.reserveStock(
+                itemRequest.getProductId(),
+                itemRequest.getQuantity(),
+                savedOrder.getId()
+            );
+        }
+        
+        // STEP 5: Update order status to CONFIRMED
+        savedOrder.setStatus("CONFIRMED");
+        Order confirmedOrder = orderRepository.save(savedOrder);
+
+        return mapToResponse(confirmedOrder);
     }
 
     @Transactional(readOnly = true)
