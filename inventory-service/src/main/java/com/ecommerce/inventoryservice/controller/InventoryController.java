@@ -1,9 +1,6 @@
 package com.ecommerce.inventoryservice.controller;
 
-import com.ecommerce.inventoryservice.dto.BulkUpdateRequest;
-import com.ecommerce.inventoryservice.dto.BulkUpdateResponse;
-import com.ecommerce.inventoryservice.dto.ProductRequest;
-import com.ecommerce.inventoryservice.dto.ProductResponse;
+import com.ecommerce.inventoryservice.dto.*;
 import com.ecommerce.inventoryservice.service.InventoryService;
 
 import jakarta.validation.Valid;
@@ -42,6 +39,13 @@ public class InventoryController {
         return ResponseEntity.ok(products);
     }
 
+    // GET SINGLE PRODUCT
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
+        ProductResponse response = inventoryService.getProductById(id);
+        return ResponseEntity.ok(response);
+    }
+
     // UPDATE PRODUCT
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(
@@ -61,6 +65,51 @@ public class InventoryController {
         inventoryService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ========== NEW ENDPOINTS FOR ORDER SERVICE INTEGRATION ==========
+
+    /**
+     * Check if sufficient stock is available
+     * GET /api/inventory/{productId}/check?quantity=5
+     */
+    @GetMapping("/{productId}/check")
+    public ResponseEntity<StockCheckResponse> checkStock(
+            @PathVariable Long productId,
+            @RequestParam Integer quantity) {
+        
+        StockCheckResponse response = inventoryService.checkStock(productId, quantity);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Reserve stock for an order
+     * PUT /api/inventory/{productId}/reserve
+     * Body: {"quantity": 5, "orderId": 123}
+     */
+    @PutMapping("/{productId}/reserve")
+    public ResponseEntity<ProductResponse> reserveStock(
+            @PathVariable Long productId,
+            @Valid @RequestBody StockReservationRequest request) {
+        
+        ProductResponse response = inventoryService.reserveStock(productId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Release reserved stock (e.g., if order is cancelled)
+     * PUT /api/inventory/{productId}/release
+     * Body: {"quantity": 5, "orderId": 123}
+     */
+    @PutMapping("/{productId}/release")
+    public ResponseEntity<ProductResponse> releaseStock(
+            @PathVariable Long productId,
+            @Valid @RequestBody StockReservationRequest request) {
+        
+        ProductResponse response = inventoryService.releaseStock(productId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    // ========== BULK UPDATE ENDPOINT ==========
 
     @PostMapping("/bulk")
     public ResponseEntity<BulkUpdateResponse> bulkUpdateStock(
