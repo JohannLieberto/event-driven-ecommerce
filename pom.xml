@@ -40,10 +40,10 @@
 
     <!-- Modules -->
     <modules>
-        <module>order-service</module>
-        <module>inventory-service</module>
         <module>eureka-server</module>
         <module>config-server</module>
+        <module>order-service</module>
+        <module>inventory-service</module>
         <module>api-gateway</module>
         <!-- Later -->
 
