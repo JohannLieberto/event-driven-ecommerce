@@ -25,12 +25,19 @@ public class SecurityConfig {
                         .pathMatchers("/auth/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
+
+                        // allow health and test endpoints
+                        .pathMatchers("/public/**").permitAll()
+
+                        // protect API endpoints
                         .pathMatchers("/api/**").authenticated()
-                        .anyExchange().authenticated()
+
+                        .anyExchange().permitAll()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

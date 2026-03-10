@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven 'Maven 3'
-        jdk 'JDK-17'
+        jdk 'JDK17'
     }
 
     environment {
@@ -39,13 +39,10 @@ pipeline {
 
         stage('Integration Tests') {
             steps {
-<<<<<<< HEAD
                 echo '🔗 Running integration tests...'
                 sh 'mvn verify'
-=======
                 echo 'Running integration tests...'
                 sh 'mvn verify -DskipUnitTests'
->>>>>>> 13954f99f3d3dfea4c96c85cbcbd77ddd29c736f
             }
             post {
                 always {
@@ -62,7 +59,7 @@ pipeline {
         }
 
         stage('Code Quality Analysis') {
-<<<<<<< HEAD
+
     steps {
         echo 'Running SonarQube analysis...'
         withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
@@ -81,7 +78,6 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo '🚦 Checking quality gate...'
-=======
             steps {
                 echo 'Running SonarQube analysis...'
                 withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
@@ -100,14 +96,13 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo 'Checking quality gate...'
->>>>>>> 13954f99f3d3dfea4c96c85cbcbd77ddd29c736f
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-<<<<<<< HEAD
+
                 stage('Build Docker Images') {
             steps {
                 echo '🐳 Building Docker images...'
@@ -118,7 +113,7 @@ pipeline {
                     sh 'docker build -t event-driven-ecommerce/config-server:${BUILD_NUMBER} config-server/'
                     sh 'docker build -t event-driven-ecommerce/api-gateway:${BUILD_NUMBER} api-gateway/'
                 }
-=======
+
         stage('Build Docker Images') {
             steps {
                 echo 'Building Docker images...'
@@ -127,26 +122,24 @@ pipeline {
                 sh "docker build -t event-driven-ecommerce/eureka-server:${BUILD_NUMBER} eureka-server/"
                 sh "docker build -t event-driven-ecommerce/config-server:${BUILD_NUMBER} config-server/"
                 sh "docker build -t event-driven-ecommerce/api-gateway:${BUILD_NUMBER} api-gateway/"
->>>>>>> 13954f99f3d3dfea4c96c85cbcbd77ddd29c736f
             }
         }
 
         stage('Deploy to Local Environment') {
             steps {
-<<<<<<< HEAD
+
                 echo '🚀 Deploying to local Docker environment...'
                 sh 'docker-compose down'
                 sh 'docker-compose up -d'
             }
         }
 
-=======
+
                 echo 'Deploying to local Docker environment...'
                 sh 'docker-compose down --remove-orphans'
                 sh 'docker-compose up -d'
             }
         }
->>>>>>> 13954f99f3d3dfea4c96c85cbcbd77ddd29c736f
     }
 
     post {
