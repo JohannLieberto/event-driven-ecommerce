@@ -52,10 +52,10 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep UP || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8761' 2>/dev/null && echo OK || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
       start_period: 60s
 
   # Config Server
@@ -74,10 +74,10 @@ services:
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8888/actuator/health | grep UP || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8888' 2>/dev/null && echo OK || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
       start_period: 60s
 
   # Order Service
