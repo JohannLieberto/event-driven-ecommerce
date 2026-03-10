@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>inventory-service</artifactId>
+    <name>Inventory Service</name>
 
     <dependencies>
 
@@ -39,11 +40,6 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- Monitoring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -56,17 +52,19 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
 
+        <!-- H2 for tests -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -74,8 +72,8 @@
             <scope>test</scope>
         </dependency>
 
-
     </dependencies>
+
     <build>
         <plugins>
             <plugin>

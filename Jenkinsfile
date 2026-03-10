@@ -13,45 +13,45 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo '📥 Checking out source code...'
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo '🔨 Building all modules...'
+                echo 'Building all modules...'
                 sh 'mvn clean compile -DskipTests'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                echo '🧪 Running unit tests...'
+                echo 'Running unit tests...'
                 sh 'mvn test'
             }
             post {
                 always {
-                    junit '**/target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
                 }
             }
         }
 
         stage('Integration Tests') {
             steps {
-                echo '🔗 Running integration tests...'
+                echo 'Running integration tests...'
                 sh 'mvn verify -DskipUnitTests'
             }
             post {
                 always {
-                    junit '**/target/failsafe-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
                 }
             }
         }
 
         stage('Package') {
             steps {
-                echo '📦 Packaging applications...'
+                echo 'Packaging applications...'
                 sh 'mvn package -DskipTests'
             }
         }
@@ -59,17 +59,17 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed! Check logs above.'
+            echo 'Pipeline failed! Check logs above.'
         }
         always {
-            echo '📊 Publishing test results...'
+            echo 'Publishing coverage report...'
             publishHTML([
-                reportDir: 'order-service/target/surefire-reports',
+                reportDir: 'order-service/target/site/jacoco',
                 reportFiles: 'index.html',
-                reportName: 'Order Service Test Report',
+                reportName: 'Order Service Coverage Report',
                 keepAll: true,
                 alwaysLinkToLastBuild: true,
                 allowMissing: true
