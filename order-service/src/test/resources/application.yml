@@ -10,10 +10,6 @@ spring:
       ddl-auto: create-drop
     show-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
-
-  eureka:
-    client:
-      enabled: false
   cloud:
     config:
       enabled: false
@@ -23,3 +19,7 @@ spring:
 logging:
   level:
     com.ecommerce.orderservice: INFO
+
+eureka:
+    client:
+      enabled: false

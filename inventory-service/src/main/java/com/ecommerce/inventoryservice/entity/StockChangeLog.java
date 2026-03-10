@@ -26,23 +26,13 @@ public class StockChangeLog {
 
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public void setProductId(Long productId) {
-    }
+    public void setProductId(Long productId) { this.productId = productId; }
+    public void setChangeType(String type) { this.changeType = type; }
+    public void setQuantityChanged(Integer qty) { this.quantityChanged = qty; }
+    public void setStockBefore(Integer before) { this.stockBefore = before; }
+    public void setStockAfter(Integer after) { this.stockAfter = after; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
 
-    public void setChangeType(String type) {
-    }
-
-    public void setQuantityChanged(Integer qty) {
-    }
-
-    public void setStockBefore(Integer before) {
-    }
-
-    public void setStockAfter(Integer after) {
-    }
-
-    public void setOrderId(Long orderId) {
-    }
 
     // getters and setters
 }

@@ -1,0 +1,83 @@
+package com.ecommerce.orderservice.client;
+
+import com.ecommerce.orderservice.dto.inventory.StockCheckResponse;
+import com.ecommerce.orderservice.dto.inventory.StockReservationRequest;
+import com.ecommerce.orderservice.exception.InventoryServiceUnavailableException;
+import com.ecommerce.orderservice.exception.InsufficientStockException;
+import com.ecommerce.orderservice.exception.ProductNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+
+@Component
+public class InventoryClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(InventoryClient.class);
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${inventory.service.url:http://localhost:8082}")
+    private String inventoryServiceUrl;
+
+    public StockCheckResponse checkStock(Long productId, Integer quantity) {
+        String url = String.format("%s/api/inventory/%d/check?quantity=%d",
+                inventoryServiceUrl, productId, quantity);
+
+        logger.info("Checking stock for product {} with quantity {}", productId, quantity);
+
+        try {
+            ResponseEntity<StockCheckResponse> response =
+                    restTemplate.getForEntity(url, StockCheckResponse.class);
+            logger.info("Stock check successful for product {}", productId);
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            logger.error("Product not found {}", productId);
+            throw new ProductNotFoundException("Product not found " + productId);
+        } catch (RestClientException e) {
+            logger.error("Inventory service unavailable {}", e.getMessage());
+            throw new InventoryServiceUnavailableException(
+                    "Inventory service temporarily unavailable, please retry");
+        }
+    }
+
+    public void reserveStock(Long productId, Integer quantity, Long orderId) {
+        String url = String.format("%s/api/inventory/%d/reserve", inventoryServiceUrl, productId);
+        StockReservationRequest request = new StockReservationRequest(quantity, orderId);
+
+        logger.info("Reserving stock for product {} quantity {} order {}", productId, quantity, orderId);
+
+        try {
+            restTemplate.put(url, request);
+            logger.info("Stock reserved successfully for product {}", productId);
+        } catch (HttpClientErrorException.Conflict e) {
+            logger.error("Insufficient stock for product {}", productId);
+            throw new InsufficientStockException("Insufficient stock for product " + productId);
+        } catch (RestClientException e) {
+            logger.error("Inventory service unavailable during reservation {}", e.getMessage());
+            throw new InventoryServiceUnavailableException(
+                    "Inventory service temporarily unavailable, please retry");
+        }
+    }
+
+    public void releaseStock(Long productId, Integer quantity, Long orderId) {
+        String url = String.format("%s/api/inventory/%d/release", inventoryServiceUrl, productId);
+        StockReservationRequest request = new StockReservationRequest(quantity, orderId);
+
+        logger.info("Releasing stock for product {} quantity {} order {}", productId, quantity, orderId);
+
+        try {
+            restTemplate.put(url, request);
+            logger.info("Stock released successfully for product {}", productId);
+        } catch (RestClientException e) {
+            logger.error("Error releasing stock {}", e.getMessage());
+            // Compensating action: we log but do not throw, so order flow does not fail
+        }
+    }
+}

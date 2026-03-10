@@ -4,9 +4,13 @@ spring:
   
   datasource:
     url: jdbc:postgresql://localhost:5432/order_db
-    username: maheendranpadmakumar
-    password:
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
   
   jpa:
     hibernate:
@@ -30,6 +34,7 @@ logging:
   level:
     com.ecommerce.orderservice: DEBUG
     org.hibernate.SQL: DEBUG
+
 eureka:
   client:
     service-url:
@@ -39,6 +44,7 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
+
 management:
   endpoints:
     web:

@@ -66,7 +66,6 @@ class OrderServiceTest {
         assertEquals(1001L, response.getCustomerId());
         assertEquals("CONFIRMED", response.getStatus());
 
-       // verify(orderRepository, times(1)).save(any(Order.class));
         verify(orderRepository, times(2)).save(any(Order.class));
     }
 
