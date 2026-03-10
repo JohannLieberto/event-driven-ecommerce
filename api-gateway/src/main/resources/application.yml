@@ -52,6 +52,7 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
 
+# 512-bit Base64-encoded secret (required by HS512 - RFC 7518 Section 3.2)
 jwt:
-  secret: bXlzZWNyZXRrZXlteXNlY3JldGtleW15c2VjcmV0a2V5bXlzZWNyZXQ=
+  secret: bXlTdXBlclNlY3JldEtleVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMkFsZ29yaXRobVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMg==
   expiration: 86400000
