@@ -68,7 +68,7 @@ public class JwtAuthenticationFilter implements WebFilter {
         return chain.filter(exchange.mutate().request(modifiedRequest).build());
     }
 
-    private Mono<Void> onError(ServerHttpExchange exchange, String message,
+    private Mono<Void> onError(ServerWebExchange exchange, String message,
                                HttpStatus status) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(status);
