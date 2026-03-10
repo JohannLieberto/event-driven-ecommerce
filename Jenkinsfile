@@ -40,11 +40,11 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 echo '🔗 Running integration tests...'
-                sh 'mvn verify -DskipUnitTests'
+                sh 'mvn verify'
             }
             post {
                 always {
-                    junit '**/target/failsafe-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
                 }
             }
         }
@@ -55,6 +55,53 @@ pipeline {
                 sh 'mvn package -DskipTests'
             }
         }
+
+        stage('Code Quality Analysis') {
+    steps {
+        echo 'Running SonarQube analysis...'
+        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+            withSonarQubeEnv('SonarQube-Local') {
+                sh '''
+                    mvn sonar:sonar \
+                        -Dsonar.projectKey=event-driven-ecommerce \
+                        -Dsonar.projectName="Event-Driven E-Commerce" \
+                        -Dsonar.login=$SONAR_TOKEN
+                '''
+            }
+        }
+    }
+}
+
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Checking quality gate...'
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+                stage('Build Docker Images') {
+            steps {
+                echo '🐳 Building Docker images...'
+                script {
+                    sh 'docker build -t event-driven-ecommerce/order-service:${BUILD_NUMBER} order-service/'
+                    sh 'docker build -t event-driven-ecommerce/inventory-service:${BUILD_NUMBER} inventory-service/'
+                    sh 'docker build -t event-driven-ecommerce/eureka-server:${BUILD_NUMBER} eureka-server/'
+                    sh 'docker build -t event-driven-ecommerce/config-server:${BUILD_NUMBER} config-server/'
+                    sh 'docker build -t event-driven-ecommerce/api-gateway:${BUILD_NUMBER} api-gateway/'
+                }
+            }
+        }
+
+        stage('Deploy to Local Environment') {
+            steps {
+                echo '🚀 Deploying to local Docker environment...'
+                sh 'docker-compose down'
+                sh 'docker-compose up -d'
+            }
+        }
+
     }
 
     post {

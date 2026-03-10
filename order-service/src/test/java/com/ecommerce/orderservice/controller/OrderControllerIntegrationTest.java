@@ -21,7 +21,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+        "eureka.client.enabled=false",
+        "eureka.client.register-with-eureka=false",
+        "eureka.client.fetch-registry=false"
+    })
+
 @AutoConfigureMockMvc
 class OrderControllerIntegrationTest {
 
@@ -119,4 +125,6 @@ class OrderControllerIntegrationTest {
         mockMvc.perform(get("/api/orders/9999"))
                 .andExpect(status().isNotFound());
     }
+
+    
 }
