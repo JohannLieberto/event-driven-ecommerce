@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven-3.9'
+        maven 'Maven 3'
         jdk 'JDK-17'
     }
 
@@ -69,7 +69,10 @@ pipeline {
             publishHTML([
                 reportDir: 'order-service/target/surefire-reports',
                 reportFiles: 'index.html',
-                reportName: 'Order Service Test Report'
+                reportName: 'Order Service Test Report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
             ])
         }
     }
