@@ -49,12 +49,6 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-<<<<<<< HEAD
-        <!-- Eureka Client - service discovery (for later) -->
-
-
-        <!-- Config Client - centralized configuration (for later) -->
-=======
         <!-- Eureka Client -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -62,7 +56,6 @@
         </dependency>
 
         <!-- Config Client -->
->>>>>>> 13954f99f3d3dfea4c96c85cbcbd77ddd29c736f
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-config</artifactId>
