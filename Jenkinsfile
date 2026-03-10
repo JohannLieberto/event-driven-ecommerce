@@ -84,10 +84,9 @@ pipeline {
 =======
             steps {
                 echo 'Running SonarQube analysis...'
-                withCredentials([file(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN_FILE')]) {
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube-Local') {
                         sh '''
-                            SONAR_TOKEN=$(cat $SONAR_TOKEN_FILE)
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
