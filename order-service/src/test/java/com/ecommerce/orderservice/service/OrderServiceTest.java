@@ -1,28 +1,27 @@
 package com.ecommerce.orderservice.service;
 
 import com.ecommerce.orderservice.client.InventoryClient;
-import com.ecommerce.orderservice.dto.OrderItemRequest;
-import com.ecommerce.orderservice.dto.OrderRequest;
-import com.ecommerce.orderservice.dto.OrderResponse;
+import com.ecommerce.orderservice.dto.*;
 import com.ecommerce.orderservice.entity.Order;
 import com.ecommerce.orderservice.entity.OrderItem;
 import com.ecommerce.orderservice.exception.InsufficientStockException;
 import com.ecommerce.orderservice.exception.OrderNotFoundException;
 import com.ecommerce.orderservice.repository.OrderRepository;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,119 +36,123 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    @Test
-    void createOrder_Success() {
+    private Order sampleOrder;
+    private OrderRequest sampleRequest;
 
-        // Arrange
-        OrderRequest request = new OrderRequest();
-        request.setCustomerId(1001L);
-
-        List<OrderItemRequest> items = new ArrayList<>();
-        OrderItemRequest item = new OrderItemRequest();
-        item.setProductId(101L);
+    @BeforeEach
+    void setUp() {
+        OrderItem item = new OrderItem();
+        item.setId(1L);
+        item.setProductId(10L);
         item.setQuantity(2);
-        items.add(item);
-        request.setItems(items);
 
-        Order savedOrder = new Order();
-        savedOrder.setId(1L);
-        savedOrder.setCustomerId(1001L);
-        savedOrder.setStatus("CONFIRMED");
-        savedOrder.setItems(new ArrayList<>());
+        sampleOrder = new Order();
+        sampleOrder.setId(1L);
+        sampleOrder.setCustomerId(100L);
+        sampleOrder.setStatus("CONFIRMED");
+        sampleOrder.setCreatedAt(LocalDateTime.now());
+        sampleOrder.setUpdatedAt(LocalDateTime.now());
+        sampleOrder.setItems(new ArrayList<>(List.of(item)));
 
-        when(inventoryClient.checkStock(anyLong(), anyInt())).thenReturn(true);
-        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+        OrderItemRequest itemRequest = new OrderItemRequest();
+        itemRequest.setProductId(10L);
+        itemRequest.setQuantity(2);
 
-        // Act
-        OrderResponse response = orderService.createOrder(request);
+        sampleRequest = new OrderRequest();
+        sampleRequest.setCustomerId(100L);
+        sampleRequest.setItems(List.of(itemRequest));
+    }
 
-        // Assert
+    @Test
+    void createOrder_sufficientStock_returnsConfirmedOrder() {
+        when(inventoryClient.checkStock(10L, 2)).thenReturn(true);
+        when(orderRepository.save(any(Order.class))).thenReturn(sampleOrder);
+
+        OrderResponse response = orderService.createOrder(sampleRequest);
+
         assertNotNull(response);
-        assertEquals(1L, response.getId());
-        assertEquals(1001L, response.getCustomerId());
         assertEquals("CONFIRMED", response.getStatus());
-
+        assertEquals(100L, response.getCustomerId());
+        verify(inventoryClient).checkStock(10L, 2);
+        verify(inventoryClient).reserveStock(eq(10L), eq(2), anyLong());
         verify(orderRepository, times(2)).save(any(Order.class));
     }
 
     @Test
-    void createOrder_InsufficientStock_ThrowsException() {
+    void createOrder_insufficientStock_throwsException() {
+        when(inventoryClient.checkStock(10L, 2)).thenReturn(false);
 
-        // Arrange
-        OrderRequest request = new OrderRequest();
-        request.setCustomerId(1001L);
+        assertThrows(InsufficientStockException.class,
+                () -> orderService.createOrder(sampleRequest));
 
-        List<OrderItemRequest> items = new ArrayList<>();
-        OrderItemRequest item = new OrderItemRequest();
-        item.setProductId(101L);
-        item.setQuantity(5);
-        items.add(item);
-        request.setItems(items);
-
-        when(inventoryClient.checkStock(anyLong(), anyInt())).thenReturn(false);
-
-        // Act + Assert
-        assertThrows(InsufficientStockException.class, () -> orderService.createOrder(request));
-
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderRepository, never()).save(any());
     }
 
     @Test
-    void getOrderById_Found() {
+    void getOrderById_found_returnsResponse() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(sampleOrder));
 
-        // Arrange
-        Order order = new Order();
-        order.setId(1L);
-        order.setCustomerId(1001L);
-        order.setStatus("CONFIRMED");
-        order.setItems(new ArrayList<>());
-
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
-
-        // Act
         OrderResponse response = orderService.getOrderById(1L);
 
-        // Assert
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals(1001L, response.getCustomerId());
+        assertEquals(100L, response.getCustomerId());
+        assertEquals("CONFIRMED", response.getStatus());
+        assertNotNull(response.getItems());
+        assertEquals(1, response.getItems().size());
     }
 
     @Test
-    void getOrderById_NotFound() {
+    void getOrderById_notFound_throwsException() {
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
 
-        // Arrange
-        when(orderRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // Act + Assert
-        assertThrows(OrderNotFoundException.class, () -> {
-            orderService.getOrderById(999L);
-        });
+        OrderNotFoundException ex = assertThrows(OrderNotFoundException.class,
+                () -> orderService.getOrderById(99L));
+        assertTrue(ex.getMessage().contains("99"));
     }
 
     @Test
-    void getOrdersByCustomerId_ReturnsList() {
+    void getOrdersByCustomerId_returnsList() {
+        when(orderRepository.findByCustomerId(100L)).thenReturn(List.of(sampleOrder));
 
-        // Arrange
-        Order order1 = new Order();
-        order1.setId(1L);
-        order1.setCustomerId(1001L);
-        order1.setStatus("CONFIRMED");
-        order1.setItems(new ArrayList<>());
+        List<OrderResponse> responses = orderService.getOrdersByCustomerId(100L);
 
-        Order order2 = new Order();
-        order2.setId(2L);
-        order2.setCustomerId(1001L);
-        order2.setStatus("PENDING");
-        order2.setItems(new ArrayList<>());
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertEquals(100L, responses.get(0).getCustomerId());
+    }
 
-        when(orderRepository.findByCustomerId(1001L)).thenReturn(List.of(order1, order2));
+    @Test
+    void getOrdersByCustomerId_noOrders_returnsEmptyList() {
+        when(orderRepository.findByCustomerId(999L)).thenReturn(List.of());
 
-        // Act
-        List<OrderResponse> responses = orderService.getOrdersByCustomerId(1001L);
+        List<OrderResponse> responses = orderService.getOrdersByCustomerId(999L);
 
-        // Assert
-        assertEquals(2, responses.size());
-        assertEquals(1001L, responses.get(0).getCustomerId());
+        assertNotNull(responses);
+        assertTrue(responses.isEmpty());
+    }
+
+    @Test
+    void createOrder_multipleItems_checksAllStock() {
+        OrderItemRequest item1 = new OrderItemRequest();
+        item1.setProductId(10L);
+        item1.setQuantity(1);
+
+        OrderItemRequest item2 = new OrderItemRequest();
+        item2.setProductId(20L);
+        item2.setQuantity(3);
+
+        OrderRequest multiItemRequest = new OrderRequest();
+        multiItemRequest.setCustomerId(100L);
+        multiItemRequest.setItems(List.of(item1, item2));
+
+        when(inventoryClient.checkStock(10L, 1)).thenReturn(true);
+        when(inventoryClient.checkStock(20L, 3)).thenReturn(true);
+        when(orderRepository.save(any(Order.class))).thenReturn(sampleOrder);
+
+        OrderResponse response = orderService.createOrder(multiItemRequest);
+        assertNotNull(response);
+        verify(inventoryClient).checkStock(10L, 1);
+        verify(inventoryClient).checkStock(20L, 3);
     }
 }
