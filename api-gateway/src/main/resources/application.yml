@@ -54,10 +54,5 @@ logging:
 
 # 512-bit Base64-encoded secret (required by HS512 - RFC 7518 Section 3.2)
 jwt:
-<<<<<<< HEAD
   secret: bXlTdXBlclNlY3JldEtleVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMkFsZ29yaXRobVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMg==
   expiration: 86400000
-=======
-  secret: mysupersecurejwtsecretkeyformicroservicesprojectthatismorethan64characterslong123456
-  expiration: 3600000
->>>>>>> d1f3053 (Jenkins update)
