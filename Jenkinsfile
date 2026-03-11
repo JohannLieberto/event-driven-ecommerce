@@ -25,26 +25,22 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
+        stage('Test & Coverage') {
             steps {
-                echo 'Running unit tests...'
-                sh 'mvn test'
+                echo 'Running tests and generating JaCoCo coverage report...'
+                sh 'mvn clean verify'
             }
             post {
                 always {
                     junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
-                }
-            }
-        }
-
-        stage('Integration Tests') {
-            steps {
-                echo 'Running integration tests...'
-                sh 'mvn verify -DskipUnitTests'
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
+                    publishHTML([
+                        reportDir: 'order-service/target/site/jacoco',
+                        reportFiles: 'index.html',
+                        reportName: 'Order Service Coverage Report',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: true
+                    ])
                 }
             }
         }
@@ -65,7 +61,9 @@ pipeline {
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
-                                -Dsonar.login=$SONAR_TOKEN
+                                -Dsonar.login=$SONAR_TOKEN \
+                                -Dsonar.host.url=http://sonarqube:9000 \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
@@ -107,17 +105,6 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed! Check logs above.'
-        }
-        always {
-            echo 'Publishing coverage report...'
-            publishHTML([
-                reportDir: 'order-service/target/site/jacoco',
-                reportFiles: 'index.html',
-                reportName: 'Order Service Coverage Report',
-                keepAll: true,
-                alwaysLinkToLastBuild: true,
-                allowMissing: true
-            ])
         }
     }
 }
