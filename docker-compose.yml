@@ -192,4 +192,3 @@ volumes:
   sonarqube-logs:
   sonarqube-extensions:
   jenkins-data:
-    external: true
