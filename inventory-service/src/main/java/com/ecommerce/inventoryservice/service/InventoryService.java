@@ -28,6 +28,8 @@ import java.util.List;
 @Transactional
 public class InventoryService {
 
+    private static final String PRODUCT_NOT_FOUND = "Product not found";
+
     @Autowired
     private ProductRepository productRepository;
 
@@ -53,7 +55,7 @@ public class InventoryService {
     public ProductResponse getProductById(Long id) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         return mapToResponse(product);
     }
@@ -62,7 +64,7 @@ public class InventoryService {
     public ProductResponse updateProduct(Long id, ProductRequest request) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -78,7 +80,7 @@ public class InventoryService {
     public void deleteProduct(Long id) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         productRepository.delete(product);
     }
@@ -87,7 +89,7 @@ public class InventoryService {
     public StockCheckResponse checkStock(Long productId, Integer requestedQuantity) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         StockCheckResponse response = new StockCheckResponse();
         response.setProductId(productId);
@@ -98,11 +100,10 @@ public class InventoryService {
     }
 
     // RESERVE STOCK
-    // RESERVE STOCK
     public ProductResponse reserveStock(Long productId, StockReservationRequest request) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         if (product.getStockQuantity() < request.getQuantity()) {
             throw new InsufficientStockException("Insufficient stock");
@@ -133,7 +134,7 @@ public class InventoryService {
     public ProductResponse releaseStock(Long productId, StockReservationRequest request) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         int before = product.getStockQuantity();
 
@@ -186,8 +187,6 @@ public class InventoryService {
         return response;
     }
 
-
-
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
 
         return productRepository.findAll(pageable)
@@ -207,7 +206,7 @@ public class InventoryService {
 
                 Product product = productRepository.findById(update.getProductId())
                         .orElseThrow(() ->
-                                new ProductNotFoundException("Product not found: " + update.getProductId()));
+                                new ProductNotFoundException(PRODUCT_NOT_FOUND + ": " + update.getProductId()));
 
                 Integer stockBefore = product.getStockQuantity();
 

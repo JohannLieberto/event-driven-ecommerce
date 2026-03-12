@@ -9,8 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.util.Arrays;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,15 +65,14 @@ class JwtAuthenticationTest {
     void generateToken_WithValidUser_TokenIsValidAndParseable() {
         String token = tokenProvider.generateToken(
                 "customer1",
-                Arrays.asList("ROLE_USER")
+                java.util.Arrays.asList("ROLE_USER")
         );
 
         assertNotNull(token, "Generated token should not be null");
         assertTrue(tokenProvider.validateToken(token), "Generated token should be valid");
-        assertTrue(
-                "customer1".equals(tokenProvider.getUsernameFromToken(token)),
-                "Token should contain correct username"
-        );
+        // Use assertEquals instead of assertTrue with equals() - fixes S5785
+        assertEquals("customer1", tokenProvider.getUsernameFromToken(token),
+                "Token should contain correct username");
     }
 
     @Test
