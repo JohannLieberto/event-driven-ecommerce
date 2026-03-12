@@ -85,6 +85,19 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>aggregate-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/target/site/jacoco-aggregate</outputDirectory>
+                            <dataFileIncludes>
+                                <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                            </dataFileIncludes>
+                        </configuration>
+                    </execution>
                 </executions>
                 <configuration>
                     <excludes>
