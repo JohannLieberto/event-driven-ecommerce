@@ -2,7 +2,6 @@ services:
   # PostgreSQL for Order Service
   order-db:
     image: postgres:15-alpine
-    container_name: order-db
     environment:
       POSTGRES_DB: order_db
       POSTGRES_USER: postgres
@@ -22,7 +21,6 @@ services:
   # PostgreSQL for Inventory Service
   inventory-db:
     image: postgres:15-alpine
-    container_name: inventory-db
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
@@ -44,7 +42,6 @@ services:
     build:
       context: ./eureka-server
       dockerfile: Dockerfile
-    container_name: eureka-server
     ports:
       - "8761:8761"
     networks:
@@ -62,7 +59,6 @@ services:
     build:
       context: ./config-server
       dockerfile: Dockerfile
-    container_name: config-server
     ports:
       - "8888:8888"
     environment:
@@ -85,7 +81,6 @@ services:
     build:
       context: ./order-service
       dockerfile: Dockerfile
-    container_name: order-service
     ports:
       - "8081:8081"
     environment:
@@ -109,7 +104,6 @@ services:
     build:
       context: ./inventory-service
       dockerfile: Dockerfile
-    container_name: inventory-service
     ports:
       - "8082:8082"
     environment:
@@ -132,7 +126,6 @@ services:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway
     ports:
       - "8080:8080"
     environment:
@@ -148,7 +141,6 @@ services:
   # SonarQube
   sonarqube:
     image: sonarqube:lts-community
-    container_name: sonarqube
     ports:
       - "9000:9000"
     environment:
@@ -172,7 +164,6 @@ services:
     build:
       context: ./jenkins
       dockerfile: Dockerfile
-    container_name: jenkins
     user: root
     ports:
       - "8083:8080"
