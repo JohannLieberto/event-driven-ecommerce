@@ -66,7 +66,7 @@ pipeline {
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
-                                -Dsonar.login=$SONAR_TOKEN
+                                -Dsonar.token=$SONAR_TOKEN
                         '''
                     }
                 }
