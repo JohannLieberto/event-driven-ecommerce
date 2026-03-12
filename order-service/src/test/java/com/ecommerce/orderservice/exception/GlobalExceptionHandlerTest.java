@@ -47,7 +47,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleInventoryServiceError_returns503() {
-        InventoryServiceException ex = new InventoryServiceException("Inventory service down");
+        InventoryServiceException ex = new InventoryServiceException("Inventory service down", null);
         ResponseEntity<Map<String, Object>> response = handler.handleInventoryServiceError(ex);
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
