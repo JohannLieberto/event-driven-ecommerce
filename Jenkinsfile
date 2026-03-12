@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         MAVEN_OPTS = '-Xmx1024m -Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400'
+        COMPOSE_PROJECT_NAME = 'ecommerce-ci'
     }
 
     stages {
@@ -95,9 +96,8 @@ pipeline {
 
         stage('Deploy to Local Environment') {
             steps {
-                echo 'Deploying to local Docker environment...'
-                sh 'docker compose down --remove-orphans'
-                sh 'docker compose up -d'
+                echo 'Deploying CI app services (project: ecommerce-ci)...'
+                sh 'docker compose -p ecommerce-ci up -d --force-recreate --no-deps order-service inventory-service eureka-server config-server api-gateway order-db inventory-db'
             }
         }
     }
