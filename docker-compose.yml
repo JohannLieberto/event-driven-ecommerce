@@ -175,7 +175,7 @@ services:
       - "8082:8080"
       - "50000:50000"
     volumes:
-      - jenkins-data:/var/jenkins_home
+      - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - microservices-network
@@ -191,4 +191,5 @@ volumes:
   sonarqube-data:
   sonarqube-logs:
   sonarqube-extensions:
-  jenkins-data:
+  jenkins_home:
+    external: true
