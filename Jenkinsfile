@@ -26,21 +26,9 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
+        stage('Test & Coverage') {
             steps {
-                echo 'Running unit tests...'
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml'
-                }
-            }
-        }
-
-        stage('Integration Tests') {
-            steps {
-                echo 'Running integration tests...'
+                echo 'Running tests and generating coverage...'
                 sh 'mvn verify'
             }
             post {
@@ -63,11 +51,11 @@ pipeline {
                 withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube-Local') {
                         sh '''
-                            mvn sonar:sonar \
+                            mvn verify sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
                                 -Dsonar.token=$SONAR_TOKEN \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,order-service/target/site/jacoco/jacoco.xml,inventory-service/target/site/jacoco/jacoco.xml,api-gateway/target/site/jacoco/jacoco.xml,eureka-server/target/site/jacoco/jacoco.xml,config-server/target/site/jacoco/jacoco.xml
+                                -Dsonar.coverage.jacoco.xmlReportPaths=order-service/target/site/jacoco/jacoco.xml,inventory-service/target/site/jacoco/jacoco.xml,api-gateway/target/site/jacoco/jacoco.xml,eureka-server/target/site/jacoco/jacoco.xml,config-server/target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
