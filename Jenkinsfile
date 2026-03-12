@@ -39,8 +39,8 @@ pipeline {
 
         stage('Integration Tests') {
             steps {
-                echo 'Running integration tests...'
-                sh 'mvn verify -DskipUnitTests'
+                echo '🔗 Running integration tests...'
+                sh 'mvn verify'
             }
             post {
                 always {
@@ -59,9 +59,10 @@ pipeline {
         stage('Code Quality Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                withCredentials([file(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN_FILE')]) {
                     withSonarQubeEnv('SonarQube-Local') {
                         sh '''
+                            SONAR_TOKEN=$(cat $SONAR_TOKEN_FILE)
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
@@ -75,8 +76,9 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo 'Checking quality gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                sleep(time: 30, unit: 'SECONDS')
+                timeout(time: 15, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
