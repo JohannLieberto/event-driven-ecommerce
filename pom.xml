@@ -23,6 +23,23 @@
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <sonar.coverage.exclusions>
+            <!-- DTOs and request/response objects -->
+            **/dto/**,
+            <!-- Entity/model classes -->
+            **/entity/**,
+            **/model/**,
+            <!-- Infrastructure-only modules -->
+            **/EurekaServerApplication.java,
+            **/ConfigServerApplication.java,
+            <!-- Application entry points -->
+            **/*Application.java
+        </sonar.coverage.exclusions>
+        <sonar.exclusions>
+            **/dto/**,
+            **/entity/**,
+            **/model/**
+        </sonar.exclusions>
     </properties>
 
     <!-- Spring Cloud Dependency Management -->
@@ -45,8 +62,6 @@
         <module>order-service</module>
         <module>inventory-service</module>
         <module>api-gateway</module>
-        <!-- Later -->
-
     </modules>
 
     <!-- Build Configuration -->
@@ -71,6 +86,17 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludes>
+                        <!-- Exclude DTOs - no business logic -->
+                        <exclude>**/dto/**</exclude>
+                        <!-- Exclude entities/models - no business logic -->
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/model/**</exclude>
+                        <!-- Exclude application entry points -->
+                        <exclude>**/*Application.class</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
