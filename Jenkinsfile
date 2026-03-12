@@ -48,6 +48,9 @@ pipeline {
         stage('Code Quality Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
+                sh 'echo "=== JACOCO XML FILES FOUND ==="'
+                sh 'find . -name "jacoco.xml" 2>/dev/null || echo "NO jacoco.xml files found!"'
+                sh 'echo "=== END ==="'
                 withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube-Local') {
                         sh '''
