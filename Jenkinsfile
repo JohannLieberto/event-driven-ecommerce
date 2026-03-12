@@ -96,8 +96,8 @@ pipeline {
         stage('Deploy to Local Environment') {
             steps {
                 echo 'Deploying to local Docker environment...'
-                sh 'docker-compose down --remove-orphans'
-                sh 'docker-compose up -d'
+                sh 'docker compose down --remove-orphans'
+                sh 'docker compose up -d'
             }
         }
     }
