@@ -55,34 +55,15 @@
         </dependencies>
     </dependencyManagement>
 
-    <!-- Modules -->
+    <!-- Modules - coverage-report MUST come last so services are built first -->
     <modules>
         <module>eureka-server</module>
         <module>config-server</module>
         <module>order-service</module>
         <module>inventory-service</module>
         <module>api-gateway</module>
+        <module>coverage-report</module>
     </modules>
-
-    <!--
-        report-aggregate requires child modules declared as dependencies
-        so JaCoCo can locate their compiled classes and jacoco.exec files.
-        Scope=test means these are only used during the verify phase report.
-    -->
-    <dependencies>
-        <dependency>
-            <groupId>com.ecommerce</groupId>
-            <artifactId>order-service</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.ecommerce</groupId>
-            <artifactId>inventory-service</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-    </dependencies>
 
     <!-- Build Configuration -->
     <build>
@@ -104,19 +85,6 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>aggregate-report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/target/site/jacoco-aggregate</outputDirectory>
-                            <dataFileIncludes>
-                                <dataFileInclude>**/jacoco.exec</dataFileInclude>
-                            </dataFileIncludes>
-                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
