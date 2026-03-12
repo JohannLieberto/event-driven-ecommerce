@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -44,14 +45,14 @@ public class OrderService {
         order.setStatus("PENDING");
 
         // Map order items
-        List<OrderItem> items = request.getItems().stream()
+        List<OrderItem> items = new ArrayList<>(request.getItems().stream()
             .map(itemRequest -> {
                 OrderItem item = new OrderItem();
                 item.setProductId(itemRequest.getProductId());
                 item.setQuantity(itemRequest.getQuantity());
                 return item;
             })
-            .toList();
+            .toList());
 
         order.setItems(items);
 
@@ -85,9 +86,9 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByCustomerId(Long customerId) {
         List<Order> orders = orderRepository.findByCustomerId(customerId);
-        return orders.stream()
+        return new ArrayList<>(orders.stream()
             .map(this::mapToResponse)
-            .toList();
+            .toList());
     }
 
     private OrderResponse mapToResponse(Order order) {
@@ -98,7 +99,7 @@ public class OrderService {
         response.setCreatedAt(order.getCreatedAt());
         response.setUpdatedAt(order.getUpdatedAt());
 
-        List<OrderItemResponse> itemResponses = order.getItems().stream()
+        List<OrderItemResponse> itemResponses = new ArrayList<>(order.getItems().stream()
             .map(item -> {
                 OrderItemResponse itemResponse = new OrderItemResponse();
                 itemResponse.setId(item.getId());
@@ -107,7 +108,7 @@ public class OrderService {
                 itemResponse.setPrice(item.getPrice());
                 return itemResponse;
             })
-            .toList();
+            .toList());
 
         response.setItems(itemResponses);
         return response;
