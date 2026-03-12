@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        MAVEN_OPTS = '-Xmx1024m'
+        MAVEN_OPTS = '-Xmx1024m -Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400'
     }
 
     stages {
