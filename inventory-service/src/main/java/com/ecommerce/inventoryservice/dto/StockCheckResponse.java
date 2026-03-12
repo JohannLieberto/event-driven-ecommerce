@@ -6,14 +6,31 @@ public class StockCheckResponse {
     private Integer availableStock;
     private boolean sufficient;
 
+    public StockCheckResponse() {
+        // Default constructor required by Jackson for deserialisation
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
     public void setProductId(Long productId) {
+        this.productId = productId;
     }
 
-    public void setSufficient(boolean b) {
+    public Integer getAvailableStock() {
+        return availableStock;
     }
 
-    public void setAvailableStock(Integer stockQuantity) {
+    public void setAvailableStock(Integer availableStock) {
+        this.availableStock = availableStock;
     }
 
-    // getters setters
+    public boolean isSufficient() {
+        return sufficient;
+    }
+
+    public void setSufficient(boolean sufficient) {
+        this.sufficient = sufficient;
+    }
 }

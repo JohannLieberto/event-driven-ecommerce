@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -20,7 +19,7 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
-    
+
     @Autowired
     private InventoryClient inventoryClient;
 
@@ -28,17 +27,17 @@ public class OrderService {
         // STEP 1: Validate stock for all items BEFORE creating order
         for (OrderItemRequest itemRequest : request.getItems()) {
             boolean hasStock = inventoryClient.checkStock(
-                itemRequest.getProductId(), 
+                itemRequest.getProductId(),
                 itemRequest.getQuantity()
             );
-            
+
             if (!hasStock) {
                 throw new InsufficientStockException(
                     "Insufficient stock for product " + itemRequest.getProductId()
                 );
             }
         }
-        
+
         // STEP 2: Create order entity
         Order order = new Order();
         order.setCustomerId(request.getCustomerId());
@@ -52,7 +51,7 @@ public class OrderService {
                 item.setQuantity(itemRequest.getQuantity());
                 return item;
             })
-            .collect(Collectors.toList());
+            .toList();
 
         order.setItems(items);
 
@@ -67,7 +66,7 @@ public class OrderService {
                 savedOrder.getId()
             );
         }
-        
+
         // STEP 5: Update order status to CONFIRMED
         savedOrder.setStatus("CONFIRMED");
         Order confirmedOrder = orderRepository.save(savedOrder);
@@ -88,7 +87,7 @@ public class OrderService {
         List<Order> orders = orderRepository.findByCustomerId(customerId);
         return orders.stream()
             .map(this::mapToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private OrderResponse mapToResponse(Order order) {
@@ -108,7 +107,7 @@ public class OrderService {
                 itemResponse.setPrice(item.getPrice());
                 return itemResponse;
             })
-            .collect(Collectors.toList());
+            .toList();
 
         response.setItems(itemResponses);
         return response;
