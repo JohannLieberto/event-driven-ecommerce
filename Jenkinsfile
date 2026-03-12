@@ -40,7 +40,7 @@ pipeline {
 
         stage('Integration Tests') {
             steps {
-                echo '🔗 Running integration tests...'
+                echo 'Running integration tests...'
                 sh 'mvn verify'
             }
             post {
@@ -66,7 +66,8 @@ pipeline {
                             mvn sonar:sonar \
                                 -Dsonar.projectKey=event-driven-ecommerce \
                                 -Dsonar.projectName="Event-Driven E-Commerce" \
-                                -Dsonar.token=$SONAR_TOKEN
+                                -Dsonar.token=$SONAR_TOKEN \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml,order-service/target/site/jacoco/jacoco.xml,inventory-service/target/site/jacoco/jacoco.xml,api-gateway/target/site/jacoco/jacoco.xml,eureka-server/target/site/jacoco/jacoco.xml,config-server/target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
