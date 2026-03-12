@@ -1,5 +1,7 @@
-# Test configuration - overrides main application.yml during mvn test/verify
 spring:
+  application:
+    name: inventory-service
+
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -17,14 +19,13 @@ spring:
     console:
       enabled: false
 
-  # Disable Config Server lookup during tests
   cloud:
     config:
       enabled: false
       import-check:
         enabled: false
-
-spring.config.import: optional:configserver:
+  config:
+    import: "optional:configserver:"
 
 eureka:
   client:
