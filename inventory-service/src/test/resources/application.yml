@@ -1,0 +1,41 @@
+# Test configuration - overrides main application.yml during mvn test/verify
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+    show-sql: false
+
+  h2:
+    console:
+      enabled: false
+
+  # Disable Config Server lookup during tests
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+spring.config.import: optional:configserver:
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+server:
+  port: 0
+
+logging:
+  level:
+    com.ecommerce: WARN
+    org.springframework: WARN
