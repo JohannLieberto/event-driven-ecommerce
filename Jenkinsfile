@@ -59,7 +59,7 @@ pipeline {
         stage('Code Quality Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                withCredentials([file(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN_FILE')]) {
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN_FILE')]) {
                     withSonarQubeEnv('SonarQube-Local') {
                         sh '''
                             SONAR_TOKEN=$(cat $SONAR_TOKEN_FILE)
