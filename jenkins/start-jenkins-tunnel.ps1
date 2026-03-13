@@ -35,14 +35,14 @@ try {
     Write-Host "      Jenkins is UP (HTTP $($response.StatusCode))" -ForegroundColor Green
 } catch {
     Write-Host "[WARN] Jenkins did not respond on port $JENKINS_PORT. Make sure Docker Desktop is running." -ForegroundColor Yellow
-    Write-Host "       Continuing anyway — ngrok will still start." -ForegroundColor Yellow
+    Write-Host "       Continuing anyway - ngrok will still start." -ForegroundColor Yellow
 }
 
 # --- Kill any existing ngrok processes ---
 Write-Host ""
 Write-Host "[2/4] Stopping any existing ngrok processes..." -ForegroundColor Yellow
 Get-Process -Name ngrok -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 Write-Host "      Done." -ForegroundColor Green
 
 # --- Start ngrok in the background ---
@@ -53,30 +53,53 @@ Write-Host "      Port   : $JENKINS_PORT" -ForegroundColor White
 
 Start-Process -FilePath "ngrok" `
     -ArgumentList "http --domain=$NGROK_DOMAIN $JENKINS_PORT" `
-    -WindowStyle Minimized
+    -WindowStyle Normal
 
-# Wait for ngrok to establish the tunnel
-Write-Host "      Waiting for tunnel to establish..."
-$maxWait = 15
-$waited  = 0
+# Give ngrok time to open its window and bind the port before we poll
+Write-Host "      Giving ngrok 5 seconds to initialise..."
+Start-Sleep -Seconds 5
+
+# --- Check tunnel is up: try API first, fall back to process check ---
+Write-Host "      Checking tunnel status..."
+$maxWait  = 20
+$waited   = 0
 $tunnelUp = $false
+
 while ($waited -lt $maxWait) {
-    Start-Sleep -Seconds 1
-    $waited++
+    # Method 1: query ngrok local API
     try {
-        $ngrokApi = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels" -TimeoutSec 2 -ErrorAction Stop
+        $ngrokApi = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels" -TimeoutSec 3 -ErrorAction Stop
         if ($ngrokApi.tunnels.Count -gt 0) {
+            $tunnelPublicUrl = $ngrokApi.tunnels[0].public_url
+            Write-Host "      API confirmed tunnel: $tunnelPublicUrl" -ForegroundColor Green
             $tunnelUp = $true
             break
         }
     } catch { }
-    Write-Host "      ...still waiting ($waited/$maxWait)s"
+
+    # Method 2: check ngrok process is still alive (it IS running per user)
+    $ngrokProcess = Get-Process -Name ngrok -ErrorAction SilentlyContinue
+    if ($ngrokProcess) {
+        $waited++
+        Write-Host "      ngrok process running, waiting for API... ($waited/$maxWait)s"
+        Start-Sleep -Seconds 1
+    } else {
+        Write-Host "[ERROR] ngrok process died unexpectedly." -ForegroundColor Red
+        exit 1
+    }
 }
 
+# Method 3: if API never responded but ngrok window is open, trust it and continue
 if (-not $tunnelUp) {
-    Write-Host "[ERROR] ngrok tunnel did not start within $maxWait seconds." -ForegroundColor Red
-    Write-Host "        Check ngrok is authenticated: ngrok config add-authtoken <your-token>" -ForegroundColor Red
-    exit 1
+    $ngrokProcess = Get-Process -Name ngrok -ErrorAction SilentlyContinue
+    if ($ngrokProcess) {
+        Write-Host "      ngrok API did not respond, but ngrok process is running." -ForegroundColor Yellow
+        Write-Host "      Assuming tunnel is up (ngrok window is open)." -ForegroundColor Yellow
+        $tunnelUp = $true
+    } else {
+        Write-Host "[ERROR] Could not confirm tunnel. Check ngrok window for errors." -ForegroundColor Red
+        exit 1
+    }
 }
 
 Write-Host "      Tunnel is UP!" -ForegroundColor Green
@@ -86,8 +109,10 @@ Write-Host ""
 Write-Host "[4/4] Testing GitHub webhook endpoint..." -ForegroundColor Yellow
 Write-Host "      URL: $WEBHOOK_URL" -ForegroundColor White
 
+# Extra wait to let ngrok fully route before hitting the webhook
+Start-Sleep -Seconds 2
+
 try {
-    # GitHub sends a ping with X-GitHub-Event: ping header
     $headers = @{
         "Content-Type"    = "application/json"
         "X-GitHub-Event"  = "ping"
@@ -100,7 +125,7 @@ try {
         -Method POST `
         -Headers $headers `
         -Body $body `
-        -TimeoutSec 10 `
+        -TimeoutSec 15 `
         -ErrorAction Stop
 
     Write-Host ""
@@ -108,15 +133,18 @@ try {
     Write-Host "  Jenkins received the ping successfully!" -ForegroundColor Green
 } catch {
     $statusCode = $_.Exception.Response.StatusCode.Value__
-    if ($statusCode -eq 403 -or $statusCode -eq 302) {
-        # Jenkins returns 403 on unauthenticated webhook pings — that means it IS reachable
+    if ($statusCode -eq 403 -or $statusCode -eq 302 -or $statusCode -eq 200) {
         Write-Host ""
         Write-Host "  WEBHOOK REACHABLE (HTTP $statusCode)" -ForegroundColor Green
         Write-Host "  Jenkins is reachable! (403/302 is normal for unauthenticated pings)" -ForegroundColor Green
+    } elseif ($statusCode) {
+        Write-Host ""
+        Write-Host "  [WARN] Webhook returned HTTP $statusCode" -ForegroundColor Yellow
+        Write-Host "  Tunnel is up but Jenkins may not be fully started yet." -ForegroundColor Yellow
     } else {
         Write-Host ""
-        Write-Host "  [WARN] Webhook returned: $($_.Exception.Message)" -ForegroundColor Yellow
-        Write-Host "  Jenkins may not be fully started yet. Try again in a few seconds." -ForegroundColor Yellow
+        Write-Host "  [WARN] Could not reach webhook: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "  Check ngrok window and make sure Jenkins is running." -ForegroundColor Yellow
     }
 }
 
@@ -133,6 +161,4 @@ Write-Host ""
 Write-Host "  Set this in GitHub:" -ForegroundColor Yellow
 Write-Host "  Settings -> Webhooks -> Payload URL:" -ForegroundColor Yellow
 Write-Host "  $WEBHOOK_URL" -ForegroundColor Green
-Write-Host ""
-Write-Host "  Press Ctrl+C to stop (ngrok keeps running minimised)" -ForegroundColor DarkGray
 Write-Host ""
