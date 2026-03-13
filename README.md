@@ -63,26 +63,78 @@ All services register with **Eureka** for service discovery. The **Config Server
 
 ```
 event-driven-ecommerce/
-+-- README.md
-+-- pom.xml                        # Parent POM - dependency management
-+-- Jenkinsfile                    # Jenkins CI/CD pipeline
-+-- docker-compose.yml             # Local full-stack Docker environment
-+-- eureka-server/                 # Service Discovery (Netflix Eureka)
-|   +-- pom.xml
-|   +-- src/
-+-- config-server/                 # Centralised Config Server (native)
-|   +-- pom.xml
-|   +-- src/
-+-- api-gateway/                   # API Gateway with JWT auth + routing
-|   +-- pom.xml
-|   +-- src/
-+-- order-service/                 # Order management microservice
-|   +-- pom.xml
-|   +-- src/
-+-- inventory-service/             # Inventory & stock microservice
-|   +-- pom.xml
-|   +-- src/
-+-- docs/                          # Project documentation
+├── README.md                          # Project overview and setup guide
+├── pom.xml                            # Parent Maven POM with dependency management
+├── Jenkinsfile                        # Jenkins CI/CD pipeline definition
+├── docker-compose.yml                 # Local full-stack Docker environment
+├── .github/                           # GitHub configuration
+├── .ai/                               # AI assistant context files
+├── .vscode/                           # VS Code workspace settings
+│
+├── eureka-server/                     # Service Discovery (Netflix Eureka)
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+│       ├── main/java/...
+│       └── main/resources/
+│
+├── config-server/                     # Centralised Configuration Server (native)
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+│       ├── main/java/...
+│       └── main/resources/
+│
+├── api-gateway/                       # API Gateway - JWT auth + service routing
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+│       ├── main/java/...
+│       └── main/resources/
+│
+├── order-service/                     # Order Management Microservice
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+│       ├── main/java/com/ecommerce/orderservice/
+│       │   ├── controller/            # REST controllers
+│       │   ├── service/               # Business logic
+│       │   ├── repository/            # JPA repositories
+│       │   ├── entity/                # JPA entities
+│       │   ├── dto/                   # Request/response DTOs
+│       │   └── exception/             # Global exception handling
+│       ├── main/resources/
+│       │   └── application.yml        # Service configuration
+│       └── test/
+│           ├── java/                  # Unit & integration tests
+│           └── resources/
+│               └── application.yml    # H2 in-memory test config
+│
+├── inventory-service/                 # Inventory Management Microservice
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+│       ├── main/java/com/ecommerce/inventoryservice/
+│       │   ├── controller/            # REST controllers
+│       │   ├── service/               # Business logic
+│       │   ├── repository/            # JPA repositories
+│       │   ├── entity/                # JPA entities
+│       │   ├── dto/                   # Request/response DTOs
+│       │   └── exception/             # Global exception handling
+│       ├── main/resources/
+│       │   └── application.yml        # Service configuration
+│       └── test/
+│           ├── java/                  # Unit & integration tests
+│           └── resources/
+│               └── application.yml    # H2 in-memory test config
+│
+├── coverage-report/                   # Aggregated JaCoCo coverage report module
+│   └── pom.xml                        # Depends on order-service & inventory-service
+│                                      # Output: coverage-report/target/site/jacoco-aggregate/
+│
+├── jenkins/                           # Jenkins configuration and shared libraries
+│
+└── docs/                              # Project documentation
 ```
 
 ---
@@ -163,15 +215,19 @@ Test reports are published from `**/target/surefire-reports/TEST-*.xml`.
 ## Running Tests
 
 ```bash
-# Run all tests
-mvn test
+# Run all tests with coverage
+mvn clean verify
 
-# Run integration tests
-mvn verify -DskipUnitTests
+# Individual module tests only
+mvn clean verify -pl order-service
+mvn clean verify -pl inventory-service
 
-# Run with coverage report
-mvn verify
-# Coverage reports: target/site/jacoco/index.html
+# Per-module coverage reports
+# order-service/target/site/jacoco/index.html
+# inventory-service/target/site/jacoco/index.html
+
+# Aggregated coverage report (both services combined)
+# coverage-report/target/site/jacoco-aggregate/index.html
 ```
 
 ---
@@ -191,8 +247,8 @@ mvn verify
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/inventory` | List all inventory items |
-| `GET` | `/api/inventory/{productId}` | Get stock for a product |
+| `GET` | `/api/inventory` | List all inventory items (paginated) |
+| `GET` | `/api/inventory/{productId}` | Get product by ID |
 | `POST` | `/api/inventory` | Add new inventory item |
-| `PUT` | `/api/inventory/{productId}` | Update stock level |
+| `PUT` | `/api/inventory/{productId}` | Update product / stock level |
 | `DELETE` | `/api/inventory/{productId}` | Remove inventory item |
