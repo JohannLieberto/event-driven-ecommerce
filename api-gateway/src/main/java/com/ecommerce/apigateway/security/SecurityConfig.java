@@ -20,12 +20,14 @@ public class SecurityConfig {
         return http
                 .csrf(CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/auth/**").permitAll()
-                        .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/eureka/**").permitAll()
-                        .pathMatchers("/public/**").permitAll()
+                        .pathMatchers(
+                                "/auth/**",
+                                "/actuator/**",
+                                "/eureka/**",
+                                "/public/**"
+                        ).permitAll()
                         .pathMatchers("/api/**").authenticated()
-                        .anyExchange().permitAll()
+                        .anyExchange().denyAll()
                 )
                 .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();

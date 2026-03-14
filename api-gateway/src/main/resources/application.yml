@@ -1,14 +1,34 @@
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
+
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 5s
+
       routes:
-        # Order Service Routes
+
         - id: order-service
           uri: lb://order-service
           predicates:
@@ -16,7 +36,6 @@ spring:
           filters:
             - StripPrefix=0
 
-        # Inventory Service Routes
         - id: inventory-service
           uri: lb://inventory-service
           predicates:
@@ -24,7 +43,6 @@ spring:
           filters:
             - StripPrefix=0
 
-        # Eureka Dashboard (for monitoring)
         - id: eureka-dashboard
           uri: http://eureka-server:8761
           predicates:
@@ -50,9 +68,8 @@ management:
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
 
-# 512-bit Base64-encoded secret (required by HS512 - RFC 7518 Section 3.2)
 jwt:
   secret: ${JWT_SECRET:bXlTdXBlclNlY3JldEtleVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMkFsZ29yaXRobVRoYXRJc0xvbmdFbm91Z2hGb3JIUzUxMg==}
   expiration: 86400000

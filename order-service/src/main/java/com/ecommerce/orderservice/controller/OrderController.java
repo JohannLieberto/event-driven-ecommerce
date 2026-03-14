@@ -43,4 +43,9 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getOrdersByCustomerId(customerId);
         return ResponseEntity.ok(orders);
     }
+    @GetMapping("/test")
+    public String test() {
+        return "Order service running";
+    }
+
 }
