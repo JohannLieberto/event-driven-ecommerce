@@ -62,7 +62,9 @@
         <module>order-service</module>
         <module>inventory-service</module>
         <module>api-gateway</module>
+        <module>payment-service</module>
         <module>coverage-report</module>
+
     </modules>
 
     <!-- Build Configuration -->
