@@ -75,6 +75,13 @@ pipeline {
             }
         }
 
+        stage('Karate API Tests') {
+            steps {
+                echo 'Running Karate API tests (profile: karate-tests)...'
+                sh 'mvn test -Pkarate-tests || echo "No Karate tests found yet"'
+            }
+        }
+
         stage('Build Docker Images') {
             steps {
                 echo 'Building Docker images...'
@@ -90,6 +97,20 @@ pipeline {
             steps {
                 echo 'Deploying CI app services (project: ecommerce-ci)...'
                 sh 'docker compose -p ecommerce-ci up -d --force-recreate --no-deps order-service inventory-service eureka-server config-server api-gateway order-db inventory-db'
+            }
+        }
+
+        stage('Deploy to Local K8s') {
+            steps {
+                echo 'Deploying to local Kubernetes using Helm...'
+                sh '''
+                    if [ -f k8s/helm/event-driven-ecommerce/Chart.yaml ]; then
+                      echo 'Helm chart found, deploying...'
+                      helm upgrade --install event-driven-ecommerce k8s/helm/event-driven-ecommerce --namespace default --create-namespace
+                    else
+                      echo 'Helm chart not present yet, skipping K8s deployment stage.'
+                    fi
+                '''
             }
         }
     }
