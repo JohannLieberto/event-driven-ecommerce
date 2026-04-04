@@ -84,6 +84,7 @@
         <module>api-gateway</module>
         <module>payment-service</module>
         <module>notification-service</module>
+        <module>shipping-service</module>
         <module>coverage-report</module>
     </modules>
 
