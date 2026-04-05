@@ -62,7 +62,7 @@
             <dependency>
                 <groupId>com.intuit.karate</groupId>
                 <artifactId>karate-junit5</artifactId>
-                <version>1.4.0</version>
+                <version>1.4.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -83,10 +83,11 @@
 
     <build>
         <plugins>
+            <!-- JaCoCo 0.8.12 supports Java 25 (class file major version 69) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <goals>
