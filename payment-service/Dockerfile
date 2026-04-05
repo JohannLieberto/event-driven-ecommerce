@@ -1,11 +1,10 @@
-# ---- Build stage (root context required for parent POM) ----
-FROM eclipse-temurin:17-jdk-alpine AS build
+# ---- Build stage ----
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY payment-service/pom.xml payment-service/pom.xml
 COPY payment-service/src payment-service/src
-RUN apk add --no-cache maven \
-  && mvn -f payment-service/pom.xml package -DskipTests
+RUN mvn -f payment-service/pom.xml package -DskipTests
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:17-jre-alpine

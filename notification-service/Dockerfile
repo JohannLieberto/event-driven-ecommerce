@@ -1,11 +1,10 @@
-# ---- Build stage (root context required for parent POM) ----
-FROM eclipse-temurin:17-jdk-alpine AS build
+# ---- Build stage ----
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY notification-service/pom.xml notification-service/pom.xml
 COPY notification-service/src notification-service/src
-RUN apk add --no-cache maven \
-  && mvn -f notification-service/pom.xml package -DskipTests
+RUN mvn -f notification-service/pom.xml package -DskipTests
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:17-jre-alpine

@@ -1,11 +1,10 @@
 # ---- Build stage ----
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY api-gateway/pom.xml api-gateway/pom.xml
 COPY api-gateway/src api-gateway/src
-RUN apk add --no-cache maven \
-  && mvn -f api-gateway/pom.xml package -DskipTests
+RUN mvn -f api-gateway/pom.xml package -DskipTests
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:17-jre-alpine

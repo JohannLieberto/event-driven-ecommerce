@@ -1,12 +1,10 @@
-# ---- Build stage (root context required for parent POM) ----
-FROM eclipse-temurin:17-jdk-alpine AS build
+# ---- Build stage ----
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
-# Copy root POM first so child can resolve parent
 COPY pom.xml .
 COPY shipping-service/pom.xml shipping-service/pom.xml
 COPY shipping-service/src shipping-service/src
-RUN apk add --no-cache maven \
-  && mvn -f shipping-service/pom.xml package -DskipTests
+RUN mvn -f shipping-service/pom.xml package -DskipTests
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:17-jre-alpine
