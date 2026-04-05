@@ -23,13 +23,18 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    // Paths that do NOT require a JWT token
+    // Paths that do NOT require a JWT token.
+    // NOTE: /api/** is open because this is an internal dev environment without auth.
+    // Spring Security's SecurityConfig also permits /api/**, but this filter runs
+    // before Spring Security — so it must be explicitly listed here too.
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/login",
             "/auth/register",
             "/actuator/health",
             "/actuator/info",
-            "/eureka"
+            "/eureka",
+            "/api/",
+            "/public/"
     );
 
     @Override
