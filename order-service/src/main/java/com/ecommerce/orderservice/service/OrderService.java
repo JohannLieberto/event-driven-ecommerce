@@ -4,8 +4,10 @@ import com.ecommerce.orderservice.client.InventoryClient;
 import com.ecommerce.orderservice.dto.*;
 import com.ecommerce.orderservice.entity.Order;
 import com.ecommerce.orderservice.entity.OrderItem;
-import com.ecommerce.orderservice.exception.OrderNotFoundException;
+import com.ecommerce.orderservice.event.OrderCreatedEvent;
 import com.ecommerce.orderservice.exception.InsufficientStockException;
+import com.ecommerce.orderservice.exception.OrderNotFoundException;
+import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.ecommerce.orderservice.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -24,14 +27,16 @@ public class OrderService {
     @Autowired
     private InventoryClient inventoryClient;
 
+    @Autowired
+    private OrderEventPublisher orderEventPublisher;
+
     public OrderResponse createOrder(OrderRequest request) {
-        // STEP 1: Validate stock for all items BEFORE creating order
+        // STEP 1: Synchronous stock check (read-only, keeps fast feedback)
         for (OrderItemRequest itemRequest : request.getItems()) {
             boolean hasStock = inventoryClient.checkStock(
                 itemRequest.getProductId(),
                 itemRequest.getQuantity()
             );
-
             if (!hasStock) {
                 throw new InsufficientStockException(
                     "Insufficient stock for product " + itemRequest.getProductId()
@@ -39,56 +44,62 @@ public class OrderService {
             }
         }
 
-        // STEP 2: Create order entity
+        // STEP 2: Create and persist order as PENDING
         Order order = new Order();
         order.setCustomerId(request.getCustomerId());
         order.setStatus("PENDING");
 
-        // Map order items
-        List<OrderItem> items = new ArrayList<>(request.getItems().stream()
+        List<OrderItem> items = request.getItems().stream()
             .map(itemRequest -> {
                 OrderItem item = new OrderItem();
                 item.setProductId(itemRequest.getProductId());
                 item.setQuantity(itemRequest.getQuantity());
                 return item;
             })
-            .toList());
+            .collect(Collectors.toCollection(ArrayList::new));
 
         order.setItems(items);
-
-        // STEP 3: Save order to database
         Order savedOrder = orderRepository.save(order);
 
-        // STEP 4: Reserve stock in inventory service
-        for (OrderItemRequest itemRequest : request.getItems()) {
-            inventoryClient.reserveStock(
-                itemRequest.getProductId(),
-                itemRequest.getQuantity(),
-                savedOrder.getId()
-            );
-        }
+        // STEP 3: Publish order.created event — downstream services handle the rest asynchronously
+        List<OrderCreatedEvent.OrderItemEvent> itemEvents = savedOrder.getItems().stream()
+            .map(item -> new OrderCreatedEvent.OrderItemEvent(item.getProductId(), item.getQuantity()))
+            .collect(Collectors.toList());
 
-        // STEP 5: Update order status to CONFIRMED
-        savedOrder.setStatus("CONFIRMED");
-        Order confirmedOrder = orderRepository.save(savedOrder);
+        OrderCreatedEvent event = new OrderCreatedEvent(
+            savedOrder.getId(),
+            savedOrder.getCustomerId(),
+            savedOrder.getStatus(),
+            itemEvents,
+            savedOrder.getCreatedAt()
+        );
 
-        return mapToResponse(confirmedOrder);
+        orderEventPublisher.publishOrderCreated(event);
+
+        return mapToResponse(savedOrder);
     }
 
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + id));
-
         return mapToResponse(order);
     }
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByCustomerId(Long customerId) {
         List<Order> orders = orderRepository.findByCustomerId(customerId);
-        return new ArrayList<>(orders.stream()
+        return orders.stream()
             .map(this::mapToResponse)
-            .toList());
+            .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public OrderResponse updateOrderStatus(Long id, String status) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + id));
+        order.setStatus(status);
+        Order updated = orderRepository.save(order);
+        return mapToResponse(updated);
     }
 
     private OrderResponse mapToResponse(Order order) {
@@ -99,7 +110,7 @@ public class OrderService {
         response.setCreatedAt(order.getCreatedAt());
         response.setUpdatedAt(order.getUpdatedAt());
 
-        List<OrderItemResponse> itemResponses = new ArrayList<>(order.getItems().stream()
+        List<OrderItemResponse> itemResponses = order.getItems().stream()
             .map(item -> {
                 OrderItemResponse itemResponse = new OrderItemResponse();
                 itemResponse.setId(item.getId());
@@ -108,7 +119,7 @@ public class OrderService {
                 itemResponse.setPrice(item.getPrice());
                 return itemResponse;
             })
-            .toList());
+            .collect(Collectors.toCollection(ArrayList::new));
 
         response.setItems(itemResponses);
         return response;

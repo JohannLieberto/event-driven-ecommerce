@@ -24,6 +24,30 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Payment Service Routes
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=0
+
+        # Shipping Service Routes
+        - id: shipping-service
+          uri: lb://shipping-service
+          predicates:
+            - Path=/api/shipments/**
+          filters:
+            - StripPrefix=0
+
+        # Notification Service Routes
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=0
+
         # Eureka Dashboard (for monitoring)
         - id: eureka-dashboard
           uri: http://eureka-server:8761
