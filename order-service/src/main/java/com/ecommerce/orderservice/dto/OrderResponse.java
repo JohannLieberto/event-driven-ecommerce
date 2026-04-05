@@ -1,5 +1,6 @@
 package com.ecommerce.orderservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,16 +13,20 @@ public class OrderResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Constructors
     public OrderResponse() {}
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    // Alias so tests can read response.orderId
+    @JsonProperty("orderId")
+    public Long getOrderId() {
+        return id;
     }
 
     public Long getCustomerId() {
