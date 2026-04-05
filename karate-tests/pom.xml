@@ -21,7 +21,6 @@
     </properties>
 
     <dependencies>
-        <!-- Karate: groupId is com.intuit.karate for versions up to 1.4.x -->
         <dependency>
             <groupId>com.intuit.karate</groupId>
             <artifactId>karate-junit5</artifactId>
@@ -57,6 +56,16 @@
                     <systemPropertyVariables>
                         <karate.env>${karate.env}</karate.env>
                     </systemPropertyVariables>
+                    <!-- Required for GraalVM JS engine (bundled in Karate 1.4.x) on Java 17+ -->
+                    <argLine>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.base/java.nio=ALL-UNNAMED
+                        --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens java.base/java.io=ALL-UNNAMED
+                        -Dpolyglot.engine.WarnInterpreterOnly=false
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>
