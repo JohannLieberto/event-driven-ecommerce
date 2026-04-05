@@ -21,8 +21,9 @@
     </properties>
 
     <dependencies>
+        <!-- Karate: groupId is com.intuit.karate for versions up to 1.4.x -->
         <dependency>
-            <groupId>io.karatelabs</groupId>
+            <groupId>com.intuit.karate</groupId>
             <artifactId>karate-junit5</artifactId>
             <version>${karate.version}</version>
             <scope>test</scope>
