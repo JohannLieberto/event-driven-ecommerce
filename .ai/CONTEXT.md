@@ -13,7 +13,7 @@ An event-driven microservices e-commerce platform built with:
 - **Spring Cloud 2023.0.0** (Eureka, Config, Gateway)
 - **Apache Kafka** (Confluent 7.5.0) for async event publishing
 - **PostgreSQL 15** — one dedicated DB per service
-- **Docker + Docker Compose** for local development
+- **Docker + Docker Compose** for local development AND cloud deployment
 - **Jenkins** for CI/CD
 - **Karate** for API/integration testing
 
@@ -136,6 +136,8 @@ curl http://localhost:8081/actuator/health
 curl http://localhost:8081/api/orders/{id}
 ```
 
+> On the EC2 server, replace `localhost` with the EC2 public IP, e.g. `http://<EC2-IP>:8081/actuator/health`
+
 ---
 
 ## 7. Things That Do NOT Exist Yet (Don't Assume They Do)
@@ -179,9 +181,9 @@ Open PR #21 (`feature/batch3-event-driven-kafka` → `develop`) must be merged b
 
 ---
 
-## 9. Cloud Deployment Plan (AWS)
+## 9. Cloud Deployment Plan — Single EC2 Instance with Docker Compose
 
-This is the agreed plan for deploying the platform to AWS. Do not deviate from this without team discussion.
+> **Why this approach?** We run `docker-compose up` locally and it works perfectly. On AWS we do exactly the same thing on a single EC2 instance. No ECS, no MSK, no RDS — just one VM running Docker. Cost: ~$15–30/month.
 
 ### Target Architecture
 
@@ -189,113 +191,200 @@ This is the agreed plan for deploying the platform to AWS. Do not deviate from t
 Internet
    │
    ▼
-[Route 53] → DNS
+[EC2 Instance - e.g. t3.medium]
+   │  (all ports opened via Security Group)
    │
-   ▼
-[ALB - Application Load Balancer]
-   │
-   ▼
-[ECS Fargate Cluster]
- ├── api-gateway          (1 task, port 8080)
- ├── order-service        (1+ tasks, port 8081)
- ├── inventory-service    (1+ tasks, port 8083)
- ├── payment-service      (1+ tasks, port 8084)
- ├── shipping-service     (1+ tasks, port 8085)
- └── notification-service (1+ tasks, port 8086)
-   │
-   ├── [Amazon MSK] ← Managed Kafka (replaces local Confluent)
-   ├── [RDS PostgreSQL] ← Managed DB (replaces local postgres container)
-   └── [ECR] ← Docker image registry (replaces local builds)
+   ├── docker-compose up --build
+   │     ├── api-gateway        :8080  ← public-facing
+   │     ├── order-service      :8081
+   │     ├── inventory-service  :8083
+   │     ├── payment-service    :8084
+   │     ├── shipping-service   :8085
+   │     ├── notification-service :8086
+   │     ├── eureka-server      :8761
+   │     ├── kafka + zookeeper  :9092
+   │     ├── kafka-ui           :9000
+   │     └── postgres           :5432
 ```
 
-### Step-by-Step Deployment Plan
+Everything runs in Docker containers on one machine, exactly as it does locally. No changes to code or docker-compose required.
 
-#### Step 1 — Containerise & Push Images to ECR
-```bash
-# Authenticate Docker to ECR
-aws ecr get-login-password --region eu-west-1 | docker login --username AWS \
-  --password-stdin <account-id>.dkr.ecr.eu-west-1.amazonaws.com
+---
 
-# Build and tag each service
-docker build -t order-service ./order-service
-docker tag order-service:latest <account-id>.dkr.ecr.eu-west-1.amazonaws.com/order-service:latest
-docker push <account-id>.dkr.ecr.eu-west-1.amazonaws.com/order-service:latest
-# Repeat for all services
-```
+### Step-by-Step EC2 Deployment
 
-#### Step 2 — Provision RDS (PostgreSQL)
-- Create one **RDS PostgreSQL 15** instance (or Aurora Serverless v2 for cost savings)
-- Create separate databases: `orderdb`, `inventorydb`, `paymentdb`, `shippingdb`, `notificationdb`
-- Place in a **private subnet** — only accessible from ECS tasks via security group
-- Update each service's environment: `SPRING_DATASOURCE_URL=jdbc:postgresql://<rds-endpoint>:5432/<dbname>`
+#### Step 1 — Launch an EC2 Instance
+- **AMI:** Amazon Linux 2023 (or Ubuntu 22.04)
+- **Instance type:** `t3.medium` (2 vCPU, 4GB RAM) — minimum for running all services + Kafka
+  - If budget allows: `t3.large` (8GB RAM) for more headroom
+- **Storage:** 20GB gp3 SSD (enough for Docker images + data)
+- **Key pair:** Create or use existing `.pem` key for SSH
+- **Security Group — open these inbound ports:**
 
-#### Step 3 — Provision Amazon MSK (Kafka)
-- Create an **MSK cluster** (Kafka 3.5, 2 brokers minimum)
-- Use `PLAINTEXT` within the VPC
-- Update each service: `SPRING_KAFKA_BOOTSTRAP_SERVERS=<msk-broker-1>:9092,<msk-broker-2>:9092`
-
-#### Step 4 — Create ECS Fargate Cluster
-- Create one ECS cluster: `ecommerce-cluster`
-- Create a **Task Definition** per service with:
-  - Image: ECR image URI
-  - Port mappings matching each service's port
-  - Environment variables for DB URL, Kafka, Eureka
-  - Memory: 512MB minimum per task, 1024MB for order/inventory
-  - CPU: 256 units minimum
-- Use **AWS Secrets Manager** for DB credentials (not hardcoded env vars)
-
-#### Step 5 — Service Discovery on AWS
-Two options:
-- **Option A (Recommended):** Replace Eureka with **AWS Cloud Map** — native ECS service discovery, no extra container needed
-- **Option B:** Keep Eureka — deploy eureka-server as an ECS service and point all services at its internal DNS name
-
-If keeping Eureka, set:
-```
-EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server.ecommerce.local:8761/eureka/
-```
-
-#### Step 6 — ALB + Target Groups
-- Create one **ALB** (internet-facing)
-- One **Target Group** per service on its respective port
-- Listener rules route by path prefix:
-  - `/api/orders*` → order-service target group (via api-gateway)
-  - All traffic hits api-gateway; api-gateway internally routes via Eureka/Cloud Map
-- In practice: **only api-gateway needs to be ALB-exposed**. All other services are internal.
-
-#### Step 7 — CI/CD Pipeline Update (Jenkins → AWS)
-Update `Jenkinsfile` to add a deploy stage:
-```groovy
-stage('Deploy to AWS') {
-    steps {
-        sh 'aws ecr get-login-password | docker login ...'
-        sh 'docker build -t order-service ./order-service'
-        sh 'docker push <ecr-uri>/order-service:latest'
-        sh 'aws ecs update-service --cluster ecommerce-cluster --service order-service --force-new-deployment'
-    }
-}
-```
-
-#### Step 8 — Environment Variables on ECS (never hardcode secrets)
-Use **AWS Systems Manager Parameter Store** or **Secrets Manager**:
-```
-/ecommerce/order-service/db-url
-/ecommerce/order-service/db-username
-/ecommerce/order-service/db-password
-/ecommerce/kafka/bootstrap-servers
-```
-Reference these in ECS task definitions as `valueFrom` secrets.
-
-### Estimated AWS Cost (dev/staging)
-| Resource | Estimated Monthly Cost |
+| Port | Purpose |
 |---|---|
-| ECS Fargate (6 services, minimal sizing) | ~$40–60 |
-| RDS PostgreSQL db.t3.micro | ~$15–25 |
-| Amazon MSK (2 kafka.t3.small brokers) | ~$50–70 |
-| ALB | ~$20 |
-| ECR storage | ~$2–5 |
-| **Total** | **~$130–180/month** |
+| 22 | SSH (your IP only, not 0.0.0.0) |
+| 8080 | API Gateway (public) |
+| 8761 | Eureka dashboard (optional, restrict if needed) |
+| 9000 | Kafka UI (optional, restrict if needed) |
+| 8081–8086 | Microservices (optional, restrict to team IPs) |
 
-> 💡 To cut costs during dev: use **RDS Aurora Serverless v2** (scales to zero) and a **single-broker MSK** or replace MSK with a small self-managed Kafka on EC2 t3.micro.
+> ⚠️ Never open port 5432 (Postgres) or 9092 (Kafka) to the internet. They communicate internally via Docker network.
+
+---
+
+#### Step 2 — SSH Into the Instance
+```bash
+ssh -i your-key.pem ec2-user@<EC2-PUBLIC-IP>
+# Ubuntu: ssh -i your-key.pem ubuntu@<EC2-PUBLIC-IP>
+```
+
+---
+
+#### Step 3 — Install Docker and Docker Compose
+```bash
+# Amazon Linux 2023
+sudo dnf update -y
+sudo dnf install -y docker git
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ec2-user
+
+# Install Docker Compose plugin
+MKDIR -P ~/.docker/cli-plugins
+curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o ~/.docker/cli-plugins/docker-compose
+chmod +x ~/.docker/cli-plugins/docker-compose
+
+# Log out and back in so group change takes effect
+exit
+ssh -i your-key.pem ec2-user@<EC2-PUBLIC-IP>
+
+# Verify
+docker --version
+docker compose version
+```
+
+---
+
+#### Step 4 — Install Java 17 and Maven (to build JARs)
+```bash
+# Amazon Linux 2023
+sudo dnf install -y java-17-amazon-corretto-devel
+
+# Install Maven
+wget https://downloads.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz
+tar -xf apache-maven-3.9.6-bin.tar.gz
+sudo mv apache-maven-3.9.6 /opt/maven
+echo 'export PATH=/opt/maven/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify
+java -version
+mvn -version
+```
+
+---
+
+#### Step 5 — Clone the Repo and Build
+```bash
+git clone https://github.com/JohannLieberto/event-driven-ecommerce.git
+cd event-driven-ecommerce
+git checkout develop
+
+# Build all JARs (skipping tests for speed)
+mvn clean package -DskipTests
+```
+
+---
+
+#### Step 6 — Start the Full Stack
+```bash
+docker compose up --build -d
+# -d runs it in the background (detached mode)
+```
+
+Watch startup progress:
+```bash
+docker compose logs -f
+# Ctrl+C to stop watching (containers keep running)
+```
+
+---
+
+#### Step 7 — Verify Everything Is Running
+```bash
+# From the EC2 instance itself:
+curl http://localhost:8080/actuator/health
+curl http://localhost:8081/actuator/health
+
+# From your laptop (replace with EC2 public IP):
+curl http://<EC2-IP>:8080/actuator/health
+```
+
+Browser links (from your laptop):
+- Eureka: `http://<EC2-IP>:8761`
+- Kafka UI: `http://<EC2-IP>:9000`
+- API Gateway: `http://<EC2-IP>:8080`
+
+---
+
+#### Step 8 — Keep It Running After SSH Disconnect
+Since we used `-d` (detached), containers keep running when you close SSH. To manage:
+```bash
+# Stop everything
+docker compose down
+
+# Restart everything
+docker compose up -d
+
+# See what's running
+docker ps
+
+# View logs for a specific service
+docker compose logs -f order-service
+```
+
+Optionally, set Docker to start on reboot:
+```bash
+sudo systemctl enable docker
+# Containers with restart: always in docker-compose will auto-start
+```
+
+Add `restart: unless-stopped` to each service in `docker-compose.yml` so containers come back automatically after an EC2 reboot:
+```yaml
+order-service:
+  restart: unless-stopped
+  ...
+```
+
+---
+
+#### Step 9 — Deploying Updates (Pull and Restart)
+When new code is merged to `develop`, SSH in and run:
+```bash
+cd event-driven-ecommerce
+git pull
+mvn clean package -DskipTests
+docker compose up --build -d
+```
+
+Only the services with changed images will rebuild. Others restart instantly from cache.
+
+---
+
+### Estimated AWS Cost
+
+| Resource | Monthly Cost |
+|---|---|
+| EC2 `t3.medium` (on-demand) | ~$30 |
+| EC2 `t3.medium` (1-year reserved) | ~$18 |
+| 20GB gp3 EBS storage | ~$1.60 |
+| Data transfer (light usage) | ~$1–3 |
+| **Total (on-demand)** | **~$32–35/month** |
+| **Total (reserved)** | **~$20–22/month** |
+
+> 💡 If the team only needs it running during demos/sprints, **stop the EC2 instance** when not in use — you only pay for storage (~$1.60/month) when stopped.
 
 ---
 
@@ -313,6 +402,7 @@ Reference these in ECS task definitions as `valueFrom` secrets.
 - ❌ Set `spring.cloud.config.fail-fast=true` unless a config-server is running in docker-compose
 - ❌ Add services to docker-compose without a `healthcheck` block — services that depend on it will race-condition start
 - ❌ Merge directly to `main` — always go through `develop` via PR
+- ❌ Open ports 5432 or 9092 in the EC2 security group — these must stay internal only
 
 ---
 
@@ -320,19 +410,19 @@ Reference these in ECS task definitions as `valueFrom` secrets.
 
 ```bash
 # Start everything
-docker-compose up --build
+docker compose up --build -d
 
 # Restart one service only (after code change)
-docker-compose up --build order-service
+docker compose up --build -d order-service
 
 # View logs for a specific service
-docker-compose logs -f order-service
+docker compose logs -f order-service
 
 # Stop everything (keeps DB data)
-docker-compose down
+docker compose down
 
 # Stop and wipe all DB data (clean slate)
-docker-compose down -v
+docker compose down -v
 
 # Check what ports are actually mapped
 docker ps
@@ -345,4 +435,7 @@ mvn clean verify
 
 # Run tests for one module only
 mvn clean verify -pl order-service
+
+# Deploy update from develop
+git pull && mvn clean package -DskipTests && docker compose up --build -d
 ```
