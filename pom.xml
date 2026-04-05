@@ -24,15 +24,11 @@
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <sonar.coverage.exclusions>
-            <!-- DTOs and request/response objects -->
             **/dto/**,
-            <!-- Entity/model classes -->
             **/entity/**,
             **/model/**,
-            <!-- Infrastructure-only modules -->
             **/EurekaServerApplication.java,
             **/ConfigServerApplication.java,
-            <!-- Application entry points -->
             **/*Application.java
         </sonar.coverage.exclusions>
         <sonar.exclusions>
@@ -41,9 +37,6 @@
             **/model/**
         </sonar.exclusions>
     </properties>
-
-    <!-- Spring Cloud Dependency Management -->
-    
 
     <dependencyManagement>
         <dependencies>
@@ -74,21 +67,21 @@
         </dependencies>
     </dependencyManagement>
 
-
-    <!-- Modules - coverage-report MUST come last so services are built first -->
+    <!-- coverage-report MUST come last -->
     <modules>
         <module>eureka-server</module>
         <module>config-server</module>
         <module>order-service</module>
         <module>inventory-service</module>
+        <module>payment-service</module>
+        <module>shipping-service</module>
+        <module>notification-service</module>
         <module>api-gateway</module>
         <module>coverage-report</module>
     </modules>
 
-    <!-- Build Configuration -->
     <build>
         <plugins>
-            <!-- JaCoCo Plugin for Code Coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -109,19 +102,15 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <!-- Exclude DTOs - no business logic -->
                         <exclude>**/dto/**</exclude>
-                        <!-- Exclude entities/models - no business logic -->
                         <exclude>**/entity/**</exclude>
                         <exclude>**/model/**</exclude>
-                        <!-- Exclude application entry points -->
                         <exclude>**/*Application.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
 
     <profiles>
         <profile>
@@ -141,6 +130,5 @@
             </build>
         </profile>
     </profiles>
-
 
 </project>
