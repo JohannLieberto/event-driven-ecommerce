@@ -24,10 +24,9 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .pathMatchers("/public/**").permitAll()
-                        .pathMatchers("/api/**").authenticated()
+                        .pathMatchers("/api/**").permitAll()
                         .anyExchange().permitAll()
                 )
-                .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 

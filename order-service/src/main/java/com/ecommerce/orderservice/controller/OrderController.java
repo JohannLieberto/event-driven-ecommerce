@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -18,7 +19,6 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    // Constructor Injection (Best Practice)
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
@@ -42,5 +42,11 @@ public class OrderController {
     public ResponseEntity<List<OrderResponse>> getOrdersByCustomer(@RequestParam Long customerId) {
         List<OrderResponse> orders = orderService.getOrdersByCustomerId(customerId);
         return ResponseEntity.ok(orders);
+    }
+
+    // Health check
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "UP"));
     }
 }

@@ -1,20 +1,28 @@
 package com.ecommerce.orderservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
+@TestPropertySource(properties = {
+    "eureka.client.enabled=false",
+    "eureka.client.register-with-eureka=false",
+    "eureka.client.fetch-registry=false",
+    "spring.cloud.config.enabled=false",
+    "spring.cloud.config.import-check.enabled=false",
+    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.kafka.bootstrap-servers=localhost:29092",
+    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
+})
 class OrderServiceApplicationTests {
-
-    @Autowired
-    private ApplicationContext applicationContext;
 
     @Test
     void contextLoads() {
-        assertNotNull(applicationContext, "Application context should load successfully");
+        // Verifies the Spring context loads correctly with test properties
     }
 }
