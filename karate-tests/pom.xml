@@ -17,7 +17,7 @@
     <name>karate-tests</name>
 
     <properties>
-        <karate.version>1.4.1</karate.version>
+        <karate.version>1.5.0</karate.version>
         <!-- Skip JaCoCo entirely for integration/Karate tests - no bytecode to instrument here -->
         <jacoco.skip>true</jacoco.skip>
     </properties>
@@ -73,7 +73,7 @@
                     <systemPropertyVariables>
                         <karate.env>${karate.env}</karate.env>
                     </systemPropertyVariables>
-                    <!-- Required for GraalVM JS engine (bundled in Karate 1.4.x) on Java 17+ -->
+                    <!-- Required for GraalVM JS engine (bundled in Karate 1.5.x) on Java 17+ -->
                     <argLine>
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
