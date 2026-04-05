@@ -14,20 +14,20 @@ Feature: Inventory Service API Tests
     And request { quantity: 10, orderId: null }
     When method POST
     Then status 200
-    And match response.productId == 1
-    And match response.quantity == '#number'
+    And match response.id == 1
+    And match response.stockQuantity == '#number'
 
   Scenario: Reserve stock for an order - should reduce quantity
     Given path '/api/inventory/1/reserve'
     And request { quantity: 1, orderId: 999 }
-    When method POST
+    When method PUT
     Then status 200
-    And match response.productId == 1
+    And match response.id == 1
 
   Scenario: Reserve stock with insufficient quantity - should return 409
     Given path '/api/inventory/1/reserve'
     And request { quantity: 999999, orderId: 998 }
-    When method POST
+    When method PUT
     Then status 409
 
   Scenario: Get inventory health
