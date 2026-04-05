@@ -17,14 +17,15 @@
     <name>karate-tests</name>
 
     <properties>
-        <karate.version>1.5.0</karate.version>
+        <karate.version>1.5.1</karate.version>
         <!-- Skip JaCoCo entirely for integration/Karate tests - no bytecode to instrument here -->
         <jacoco.skip>true</jacoco.skip>
     </properties>
 
     <dependencies>
+        <!-- NOTE: Karate 1.5.x changed group ID from com.intuit.karate to io.karatelabs -->
         <dependency>
-            <groupId>com.intuit.karate</groupId>
+            <groupId>io.karatelabs</groupId>
             <artifactId>karate-junit5</artifactId>
             <version>${karate.version}</version>
             <scope>test</scope>
