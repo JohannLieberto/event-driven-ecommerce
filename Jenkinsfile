@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = 'your-dockerhub-username'
+        DOCKER_REGISTRY = 'HiteshKhade'
         MAVEN_OPTS = '-Dmaven.test.failure.ignore=false'
         KARATE_ENV = 'ci'
     }
@@ -80,10 +80,29 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Starting Kafka, Postgres, and all services via Docker Compose ==='
+                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
                 sh 'docker-compose up -d --build'
-                sh 'echo "Waiting 60s for services to start..."'
-                sh 'sleep 60'
+
+                echo '=== Waiting for Kafka to become fully healthy ==='
+                // Poll Kafka readiness: retry every 5s for up to 120s total
+                sh '''
+                    RETRIES=24
+                    COUNT=0
+                    until docker exec kafka kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+                        COUNT=$((COUNT + 1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Kafka did not become ready after 120 seconds. Aborting."
+                            docker-compose logs kafka
+                            exit 1
+                        fi
+                        echo "Kafka not ready yet... attempt $COUNT/$RETRIES. Retrying in 5s."
+                        sleep 5
+                    done
+                    echo "Kafka is ready after $((COUNT * 5))s."
+                '''
+
+                echo '=== Waiting for all Spring services to register with Eureka ==='
+                sh 'sleep 45'
             }
         }
 
@@ -119,7 +138,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo '=== Building and pushing Docker images ==='
+                echo '=== Building and pushing Docker images to DockerHub (HiteshKhade) ==='
                 script {
                     def services = [
                         'eureka-server', 'api-gateway', 'order-service',
@@ -161,7 +180,8 @@ pipeline {
             echo '=== Pipeline PASSED ==='
         }
         failure {
-            echo '=== Pipeline FAILED ==='
+            echo '=== Pipeline FAILED - check logs above ==='
+            sh 'docker-compose logs --tail=50 || true'
         }
         always {
             cleanWs()
