@@ -67,7 +67,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <!-- coverage-report MUST come last -->
+    <!-- karate-tests MUST come before coverage-report -->
     <modules>
         <module>eureka-server</module>
         <module>config-server</module>
@@ -77,6 +77,7 @@
         <module>shipping-service</module>
         <module>notification-service</module>
         <module>api-gateway</module>
+        <module>karate-tests</module>
         <module>coverage-report</module>
     </modules>
 
