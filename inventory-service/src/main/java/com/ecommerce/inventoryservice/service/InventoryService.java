@@ -24,6 +24,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
 @Service
 @Transactional
 public class InventoryService {
@@ -35,6 +38,9 @@ public class InventoryService {
 
     @Autowired
     private StockChangeLogRepository stockChangeLogRepository;
+
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     // CREATE PRODUCT
     public ProductResponse createProduct(ProductRequest request) {
@@ -125,7 +131,7 @@ public class InventoryService {
 
             return mapToResponse(updated);
 
-        } catch (OptimisticLockException e) {
+        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
@@ -152,7 +158,7 @@ public class InventoryService {
 
             return mapToResponse(updated);
 
-        } catch (OptimisticLockException e) {
+        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
@@ -256,6 +262,79 @@ public class InventoryService {
         response.setResults(results);
 
         return response;
+    }
+
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        try {
+            reserveOrderStock(event);
+
+            kafkaTemplate.send(
+                    "inventory.inventory-reserved",
+                    new InventoryReservedEvent(event.getOrderId(), event.getItems())
+            );
+
+        } catch (Exception e) {
+            kafkaTemplate.send(
+                    "inventory.inventory-failed",
+                    new InventoryFailedEvent(event.getOrderId(), e.getMessage())
+            );
+        }
+    }
+
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+        List<StockChangeLog> reservations =
+                stockChangeLogRepository.findByOrderIdAndChangeType(event.getOrderId(), "RESERVE");
+
+        for (StockChangeLog log : reservations) {
+
+            boolean alreadyReleased = stockChangeLogRepository
+                    .existsByOrderIdAndProductIdAndChangeType(
+                            event.getOrderId(),
+                            log.getProductId(),
+                            "RELEASE"
+                    );
+
+            if (alreadyReleased) {
+                continue;
+            }
+
+            StockReservationRequest request = new StockReservationRequest();
+            request.setOrderId(event.getOrderId());
+            request.setQuantity(log.getQuantityChanged());
+
+            releaseStock(log.getProductId(), request);
+        }
+    }
+
+
+    @Transactional
+    public void reserveOrderStock(OrderCreatedEvent event) {
+
+        // Step 1: validate all items first
+        for (OrderItemEvent item : event.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
+            if (product.getStockQuantity() < item.getQuantity()) {
+                throw new InsufficientStockException(
+                        "Insufficient stock for product " + item.getProductId()
+                );
+            }
+        }
+
+        // Step 2: reserve every item
+        for (OrderItemEvent item : event.getItems()) {
+            StockReservationRequest request = new StockReservationRequest();
+            request.setOrderId(event.getOrderId());
+            request.setQuantity(item.getQuantity());
+
+            reserveStock(item.getProductId(), request);
+        }
+    }
+
+    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+        // Stock already deducted during reservation.
+        // No further stock change needed on payment success.
     }
 
 }
