@@ -1,31 +1,23 @@
 package com.ecommerce.inventoryservice.service;
 
 import com.ecommerce.inventoryservice.dto.*;
-
 import com.ecommerce.inventoryservice.entity.Product;
 import com.ecommerce.inventoryservice.entity.StockChangeLog;
-
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.exception.ProductNotFoundException;
 import com.ecommerce.inventoryservice.exception.StockConcurrencyException;
-
 import com.ecommerce.inventoryservice.repository.ProductRepository;
 import com.ecommerce.inventoryservice.repository.StockChangeLogRepository;
-
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @Service
 @Transactional
@@ -33,18 +25,19 @@ public class InventoryService {
 
     private static final String PRODUCT_NOT_FOUND = "Product not found";
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final StockChangeLogRepository stockChangeLogRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Autowired
-    private StockChangeLogRepository stockChangeLogRepository;
+    public InventoryService(ProductRepository productRepository,
+                            StockChangeLogRepository stockChangeLogRepository,
+                            KafkaTemplate<String, Object> kafkaTemplate) {
+        this.productRepository = productRepository;
+        this.stockChangeLogRepository = stockChangeLogRepository;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
-    @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
-
-    // CREATE PRODUCT
     public ProductResponse createProduct(ProductRequest request) {
-
         Product product = new Product();
 
         product.setName(request.getName());
@@ -53,22 +46,17 @@ public class InventoryService {
         product.setStockQuantity(request.getStockQuantity());
 
         Product saved = productRepository.save(product);
-
         return mapToResponse(saved);
     }
 
-    // GET PRODUCT
     public ProductResponse getProductById(Long id) {
-
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         return mapToResponse(product);
     }
 
-    // UPDATE PRODUCT
     public ProductResponse updateProduct(Long id, ProductRequest request) {
-
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
@@ -78,22 +66,17 @@ public class InventoryService {
         product.setStockQuantity(request.getStockQuantity());
 
         Product updated = productRepository.save(product);
-
         return mapToResponse(updated);
     }
 
-    // DELETE PRODUCT
     public void deleteProduct(Long id) {
-
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         productRepository.delete(product);
     }
 
-    // CHECK STOCK
     public StockCheckResponse checkStock(Long productId, Integer requestedQuantity) {
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
@@ -105,9 +88,7 @@ public class InventoryService {
         return response;
     }
 
-    // RESERVE STOCK
     public ProductResponse reserveStock(Long productId, StockReservationRequest request) {
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
@@ -116,18 +97,19 @@ public class InventoryService {
         }
 
         int before = product.getStockQuantity();
-
         product.setStockQuantity(before - request.getQuantity());
 
         try {
-
             Product updated = productRepository.save(product);
 
-            logStockChange(productId, "RESERVE",
+            logStockChange(
+                    productId,
+                    "RESERVE",
                     request.getQuantity(),
                     before,
                     updated.getStockQuantity(),
-                    request.getOrderId());
+                    request.getOrderId()
+            );
 
             return mapToResponse(updated);
 
@@ -136,25 +118,24 @@ public class InventoryService {
         }
     }
 
-    // RELEASE STOCK
     public ProductResponse releaseStock(Long productId, StockReservationRequest request) {
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
 
         int before = product.getStockQuantity();
-
         product.setStockQuantity(before + request.getQuantity());
 
         try {
-
             Product updated = productRepository.save(product);
 
-            logStockChange(productId, "RELEASE",
+            logStockChange(
+                    productId,
+                    "RELEASE",
                     request.getQuantity(),
                     before,
                     updated.getStockQuantity(),
-                    request.getOrderId());
+                    request.getOrderId()
+            );
 
             return mapToResponse(updated);
 
@@ -163,11 +144,9 @@ public class InventoryService {
         }
     }
 
-    // LOG STOCK CHANGE
     private void logStockChange(Long productId, String type,
                                 Integer qty, Integer before,
                                 Integer after, Long orderId) {
-
         StockChangeLog log = new StockChangeLog();
 
         log.setProductId(productId);
@@ -181,7 +160,6 @@ public class InventoryService {
     }
 
     private ProductResponse mapToResponse(Product product) {
-
         ProductResponse response = new ProductResponse();
 
         response.setId(product.getId());
@@ -194,68 +172,58 @@ public class InventoryService {
     }
 
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
-
         return productRepository.findAll(pageable)
                 .map(this::mapToResponse);
     }
 
     public BulkUpdateResponse bulkUpdateStock(BulkUpdateRequest request) {
-
         List<UpdateResult> results = new ArrayList<>();
 
         int successCount = 0;
         int failureCount = 0;
 
         for (ProductStockUpdate update : request.getUpdates()) {
-
             try {
-
                 Product product = productRepository.findById(update.getProductId())
                         .orElseThrow(() ->
                                 new ProductNotFoundException(PRODUCT_NOT_FOUND + ": " + update.getProductId()));
 
                 Integer stockBefore = product.getStockQuantity();
-
                 product.setStockQuantity(update.getNewQuantity());
-
                 productRepository.save(product);
 
                 int diff = update.getNewQuantity() - stockBefore;
 
-                logStockChange(product.getId(),
+                logStockChange(
+                        product.getId(),
                         "BULK_UPDATE",
                         Math.abs(diff),
                         stockBefore,
                         update.getNewQuantity(),
-                        null);
+                        null
+                );
 
                 UpdateResult result = new UpdateResult();
-
                 result.setProductId(update.getProductId());
                 result.setSuccess(true);
                 result.setMessage("Updated successfully");
                 result.setNewQuantity(update.getNewQuantity());
 
                 results.add(result);
-
                 successCount++;
 
             } catch (ProductNotFoundException e) {
-
                 UpdateResult result = new UpdateResult();
-
                 result.setProductId(update.getProductId());
                 result.setSuccess(false);
                 result.setMessage(e.getMessage());
 
                 results.add(result);
-
                 failureCount++;
             }
         }
 
         BulkUpdateResponse response = new BulkUpdateResponse();
-
         response.setTotalRequested(request.getUpdates().size());
         response.setSuccessCount(successCount);
         response.setFailureCount(failureCount);
@@ -286,7 +254,6 @@ public class InventoryService {
                 stockChangeLogRepository.findByOrderIdAndChangeType(event.getOrderId(), "RESERVE");
 
         for (StockChangeLog log : reservations) {
-
             boolean alreadyReleased = stockChangeLogRepository
                     .existsByOrderIdAndProductIdAndChangeType(
                             event.getOrderId(),
@@ -306,11 +273,8 @@ public class InventoryService {
         }
     }
 
-
     @Transactional
     public void reserveOrderStock(OrderCreatedEvent event) {
-
-        // Step 1: validate all items first
         for (OrderItemEvent item : event.getItems()) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
@@ -322,7 +286,6 @@ public class InventoryService {
             }
         }
 
-        // Step 2: reserve every item
         for (OrderItemEvent item : event.getItems()) {
             StockReservationRequest request = new StockReservationRequest();
             request.setOrderId(event.getOrderId());
@@ -336,5 +299,4 @@ public class InventoryService {
         // Stock already deducted during reservation.
         // No further stock change needed on payment success.
     }
-
 }

@@ -1,4 +1,7 @@
 package com.ecommerce.inventoryservice.entity;
 
-public class ReservationStatus {
+public enum ReservationStatus {
+    RESERVED,
+    CONFIRMED,
+    RELEASED
 }

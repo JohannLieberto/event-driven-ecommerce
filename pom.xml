@@ -63,6 +63,7 @@
         <module>inventory-service</module>
         <module>api-gateway</module>
         <module>coverage-report</module>
+        <module>karate-tests</module>
     </modules>
 
     <!-- Build Configuration -->
