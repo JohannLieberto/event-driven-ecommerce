@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>InventoryClient.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Coverage Report</a> &gt; <a href="../index.html" class="el_bundle">order-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.orderservice.client</a> &gt; <span class="el_source">InventoryClient.java</span></div><h1>InventoryClient.java</h1><pre class="source lang-java linenums">package com.ecommerce.orderservice.client;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import com.ecommerce.orderservice.exception.InsufficientStockException;
+import com.ecommerce.orderservice.exception.InventoryServiceException;
+
+import org.springframework.web.client.HttpClientErrorException;
+
+@Component
+<span class="fc" id="L13">public class InventoryClient {</span>
+    
+    @Autowired
+    private RestTemplate restTemplate;
+    
+    // Use Eureka service name for discovery
+    private static final String INVENTORY_SERVICE_URL = &quot;http://inventory-service/api/inventory&quot;;
+    
+    /**
+     * Check if product has sufficient stock
+     */
+    public boolean checkStock(Long productId, int quantity) {
+<span class="nc" id="L25">        String url = INVENTORY_SERVICE_URL + &quot;/&quot; + productId + &quot;/check?quantity=&quot; + quantity;</span>
+        
+        try {
+<span class="nc" id="L28">            StockCheckResponse response = restTemplate.getForObject(url, StockCheckResponse.class);</span>
+<span class="nc bnc" id="L29" title="All 4 branches missed.">            return response != null &amp;&amp; response.isSufficient();</span>
+<span class="nc" id="L30">        } catch (HttpClientErrorException.NotFound e) {</span>
+            // Product doesn't exist
+<span class="nc" id="L32">            return false;</span>
+<span class="nc" id="L33">        } catch (Exception e) {</span>
+<span class="nc" id="L34">            throw new InventoryServiceException(&quot;Failed to check stock for product &quot; + productId, e);</span>
+        }
+    }
+    
+    /**
+     * Reserve stock for an order
+     */
+    public void reserveStock(Long productId, int quantity, Long orderId) {
+<span class="nc" id="L42">        String url = INVENTORY_SERVICE_URL + &quot;/&quot; + productId + &quot;/reserve&quot;;</span>
+        
+<span class="nc" id="L44">        StockReservationRequest request = new StockReservationRequest();</span>
+<span class="nc" id="L45">        request.setQuantity(quantity);</span>
+<span class="nc" id="L46">        request.setOrderId(orderId);</span>
+        
+        try {
+<span class="nc" id="L49">            restTemplate.put(url, request);</span>
+<span class="nc" id="L50">        } catch (HttpClientErrorException.Conflict e) {</span>
+<span class="nc" id="L51">            throw new InsufficientStockException(&quot;Insufficient stock for product &quot; + productId);</span>
+<span class="nc" id="L52">        } catch (Exception e) {</span>
+<span class="nc" id="L53">            throw new InventoryServiceException(&quot;Failed to reserve stock for product &quot; + productId, e);</span>
+<span class="nc" id="L54">        }</span>
+<span class="nc" id="L55">    }</span>
+    
+    // DTOs matching inventory-service responses
+<span class="nc" id="L58">    public static class StockCheckResponse {</span>
+        private Long productId;
+        private Integer availableStock;
+        private boolean sufficient;
+        
+        // Getters and setters
+<span class="nc" id="L64">        public Long getProductId() { return productId; }</span>
+<span class="nc" id="L65">        public void setProductId(Long productId) { this.productId = productId; }</span>
+        
+<span class="nc" id="L67">        public Integer getAvailableStock() { return availableStock; }</span>
+<span class="nc" id="L68">        public void setAvailableStock(Integer availableStock) { this.availableStock = availableStock; }</span>
+        
+<span class="nc" id="L70">        public boolean isSufficient() { return sufficient; }</span>
+<span class="nc" id="L71">        public void setSufficient(boolean sufficient) { this.sufficient = sufficient; }</span>
+    }
+    
+<span class="nc" id="L74">    public static class StockReservationRequest {</span>
+        private Integer quantity;
+        private Long orderId;
+        
+        // Getters and setters
+<span class="nc" id="L79">        public Integer getQuantity() { return quantity; }</span>
+<span class="nc" id="L80">        public void setQuantity(Integer quantity) { this.quantity = quantity; }</span>
+        
+<span class="nc" id="L82">        public Long getOrderId() { return orderId; }</span>
+<span class="nc" id="L83">        public void setOrderId(Long orderId) { this.orderId = orderId; }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

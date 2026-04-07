@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>InventoryExceptionHandler.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Coverage Report</a> &gt; <a href="../index.html" class="el_bundle">inventory-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.inventoryservice.exception</a> &gt; <span class="el_source">InventoryExceptionHandler.java</span></div><h1>InventoryExceptionHandler.java</h1><pre class="source lang-java linenums">package com.ecommerce.inventoryservice.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+<span class="fc" id="L15">public class InventoryExceptionHandler {</span>
+
+    private static final String KEY_TIMESTAMP = &quot;timestamp&quot;;
+    private static final String KEY_STATUS    = &quot;status&quot;;
+    private static final String KEY_ERROR     = &quot;error&quot;;
+    private static final String KEY_MESSAGE   = &quot;message&quot;;
+
+    // Handle Product Not Found (404)
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity&lt;Object&gt; handleProductNotFound(ProductNotFoundException ex) {
+
+<span class="nc" id="L26">        Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L27">        error.put(KEY_TIMESTAMP, LocalDateTime.now());</span>
+<span class="nc" id="L28">        error.put(KEY_STATUS, HttpStatus.NOT_FOUND.value());</span>
+<span class="nc" id="L29">        error.put(KEY_ERROR, &quot;Not Found&quot;);</span>
+<span class="nc" id="L30">        error.put(KEY_MESSAGE, ex.getMessage());</span>
+
+<span class="nc" id="L32">        return new ResponseEntity&lt;&gt;(error, HttpStatus.NOT_FOUND);</span>
+    }
+
+    // Handle Validation Errors (400)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Object&gt; handleValidationExceptions(MethodArgumentNotValidException ex) {
+
+<span class="nc" id="L39">        Map&lt;String, String&gt; validationErrors = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L41">        ex.getBindingResult().getFieldErrors().forEach((FieldError fieldError) -&gt;</span>
+<span class="nc" id="L42">                validationErrors.put(fieldError.getField(), fieldError.getDefaultMessage())</span>
+        );
+
+<span class="nc" id="L45">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L46">        response.put(KEY_TIMESTAMP, LocalDateTime.now());</span>
+<span class="nc" id="L47">        response.put(KEY_STATUS, HttpStatus.BAD_REQUEST.value());</span>
+<span class="nc" id="L48">        response.put(&quot;errors&quot;, validationErrors);</span>
+
+<span class="nc" id="L50">        return new ResponseEntity&lt;&gt;(response, HttpStatus.BAD_REQUEST);</span>
+    }
+
+    // Generic Exception (500)
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;Object&gt; handleGenericException(Exception ex) {
+
+<span class="nc" id="L57">        Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L58">        error.put(KEY_TIMESTAMP, LocalDateTime.now());</span>
+<span class="nc" id="L59">        error.put(KEY_STATUS, HttpStatus.INTERNAL_SERVER_ERROR.value());</span>
+<span class="nc" id="L60">        error.put(KEY_ERROR, &quot;Internal Server Error&quot;);</span>
+<span class="nc" id="L61">        error.put(KEY_MESSAGE, ex.getMessage());</span>
+
+<span class="nc" id="L63">        return new ResponseEntity&lt;&gt;(error, HttpStatus.INTERNAL_SERVER_ERROR);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

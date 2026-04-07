@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>OrderService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Coverage Report</a> &gt; <a href="../index.html" class="el_bundle">order-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.orderservice.service</a> &gt; <span class="el_source">OrderService.java</span></div><h1>OrderService.java</h1><pre class="source lang-java linenums">package com.ecommerce.orderservice.service;
+
+import com.ecommerce.orderservice.client.InventoryClient;
+import com.ecommerce.orderservice.dto.*;
+import com.ecommerce.orderservice.entity.Order;
+import com.ecommerce.orderservice.entity.OrderItem;
+import com.ecommerce.orderservice.exception.OrderNotFoundException;
+import com.ecommerce.orderservice.exception.InsufficientStockException;
+import com.ecommerce.orderservice.repository.OrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Transactional
+<span class="fc" id="L19">public class OrderService {</span>
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private InventoryClient inventoryClient;
+
+    public OrderResponse createOrder(OrderRequest request) {
+        // STEP 1: Validate stock for all items BEFORE creating order
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for (OrderItemRequest itemRequest : request.getItems()) {</span>
+<span class="fc" id="L30">            boolean hasStock = inventoryClient.checkStock(</span>
+<span class="fc" id="L31">                itemRequest.getProductId(),</span>
+<span class="fc" id="L32">                itemRequest.getQuantity()</span>
+            );
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            if (!hasStock) {</span>
+<span class="fc" id="L36">                throw new InsufficientStockException(</span>
+<span class="fc" id="L37">                    &quot;Insufficient stock for product &quot; + itemRequest.getProductId()</span>
+                );
+            }
+<span class="fc" id="L40">        }</span>
+
+        // STEP 2: Create order entity
+<span class="fc" id="L43">        Order order = new Order();</span>
+<span class="fc" id="L44">        order.setCustomerId(request.getCustomerId());</span>
+<span class="fc" id="L45">        order.setStatus(&quot;PENDING&quot;);</span>
+
+        // Map order items
+<span class="fc" id="L48">        List&lt;OrderItem&gt; items = new ArrayList&lt;&gt;(request.getItems().stream()</span>
+<span class="fc" id="L49">            .map(itemRequest -&gt; {</span>
+<span class="fc" id="L50">                OrderItem item = new OrderItem();</span>
+<span class="fc" id="L51">                item.setProductId(itemRequest.getProductId());</span>
+<span class="fc" id="L52">                item.setQuantity(itemRequest.getQuantity());</span>
+<span class="fc" id="L53">                return item;</span>
+            })
+<span class="fc" id="L55">            .toList());</span>
+
+<span class="fc" id="L57">        order.setItems(items);</span>
+
+        // STEP 3: Save order to database
+<span class="fc" id="L60">        Order savedOrder = orderRepository.save(order);</span>
+
+        // STEP 4: Reserve stock in inventory service
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (OrderItemRequest itemRequest : request.getItems()) {</span>
+<span class="fc" id="L64">            inventoryClient.reserveStock(</span>
+<span class="fc" id="L65">                itemRequest.getProductId(),</span>
+<span class="fc" id="L66">                itemRequest.getQuantity(),</span>
+<span class="fc" id="L67">                savedOrder.getId()</span>
+            );
+<span class="fc" id="L69">        }</span>
+
+        // STEP 5: Update order status to CONFIRMED
+<span class="fc" id="L72">        savedOrder.setStatus(&quot;CONFIRMED&quot;);</span>
+<span class="fc" id="L73">        Order confirmedOrder = orderRepository.save(savedOrder);</span>
+
+<span class="fc" id="L75">        return mapToResponse(confirmedOrder);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderById(Long id) {
+<span class="fc" id="L80">        Order order = orderRepository.findById(id)</span>
+<span class="fc" id="L81">            .orElseThrow(() -&gt; new OrderNotFoundException(&quot;Order not found with ID: &quot; + id));</span>
+
+<span class="fc" id="L83">        return mapToResponse(order);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;OrderResponse&gt; getOrdersByCustomerId(Long customerId) {
+<span class="fc" id="L88">        List&lt;Order&gt; orders = orderRepository.findByCustomerId(customerId);</span>
+<span class="fc" id="L89">        return new ArrayList&lt;&gt;(orders.stream()</span>
+<span class="fc" id="L90">            .map(this::mapToResponse)</span>
+<span class="fc" id="L91">            .toList());</span>
+    }
+
+    private OrderResponse mapToResponse(Order order) {
+<span class="fc" id="L95">        OrderResponse response = new OrderResponse();</span>
+<span class="fc" id="L96">        response.setId(order.getId());</span>
+<span class="fc" id="L97">        response.setCustomerId(order.getCustomerId());</span>
+<span class="fc" id="L98">        response.setStatus(order.getStatus());</span>
+<span class="fc" id="L99">        response.setCreatedAt(order.getCreatedAt());</span>
+<span class="fc" id="L100">        response.setUpdatedAt(order.getUpdatedAt());</span>
+
+<span class="fc" id="L102">        List&lt;OrderItemResponse&gt; itemResponses = new ArrayList&lt;&gt;(order.getItems().stream()</span>
+<span class="fc" id="L103">            .map(item -&gt; {</span>
+<span class="fc" id="L104">                OrderItemResponse itemResponse = new OrderItemResponse();</span>
+<span class="fc" id="L105">                itemResponse.setId(item.getId());</span>
+<span class="fc" id="L106">                itemResponse.setProductId(item.getProductId());</span>
+<span class="fc" id="L107">                itemResponse.setQuantity(item.getQuantity());</span>
+<span class="fc" id="L108">                itemResponse.setPrice(item.getPrice());</span>
+<span class="fc" id="L109">                return itemResponse;</span>
+            })
+<span class="fc" id="L111">            .toList());</span>
+
+<span class="fc" id="L113">        response.setItems(itemResponses);</span>
+<span class="fc" id="L114">        return response;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

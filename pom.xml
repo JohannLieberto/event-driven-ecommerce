@@ -83,6 +83,7 @@
         <module>inventory-service</module>
         <module>api-gateway</module>
         <module>coverage-report</module>
+        <module>shipping-service</module>
     </modules>
 
     <!-- Build Configuration -->

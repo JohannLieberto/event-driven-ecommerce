@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>InventoryConfig.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Coverage Report</a> &gt; <a href="../index.html" class="el_bundle">order-service</a> &gt; <a href="index.source.html" class="el_package">com.ecommerce.orderservice.config</a> &gt; <span class="el_source">InventoryConfig.java</span></div><h1>InventoryConfig.java</h1><pre class="source lang-java linenums">package com.ecommerce.orderservice.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.stereotype.Component;
+
+@Component
+@RefreshScope
+@ConfigurationProperties(prefix = &quot;inventory&quot;)
+<span class="fc" id="L10">public class InventoryConfig {</span>
+
+<span class="fc" id="L12">    private Service service = new Service();</span>
+
+    public Service getService() {
+<span class="nc" id="L15">        return service;</span>
+    }
+
+    public void setService(Service service) {
+<span class="nc" id="L19">        this.service = service;</span>
+<span class="nc" id="L20">    }</span>
+
+<span class="fc" id="L22">    public static class Service {</span>
+
+        private String url;
+
+        public String getUrl() {
+<span class="nc" id="L27">            return url;</span>
+        }
+
+        public void setUrl(String url) {
+<span class="nc" id="L31">            this.url = url;</span>
+<span class="nc" id="L32">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
