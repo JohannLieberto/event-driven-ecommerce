@@ -153,7 +153,7 @@ public class InventoryService {
             log.warn("[INVENTORY-SERVICE] No items in order.created event for orderId={}", event.getOrderId());
             return;
         }
-        for (OrderCreatedEvent.OrderItem item : event.getItems()) {
+        for (OrderItemEvent item : event.getItems()) {
             StockReservationRequest req = new StockReservationRequest();
             req.setQuantity(item.getQuantity());
             req.setOrderId(event.getOrderId());
