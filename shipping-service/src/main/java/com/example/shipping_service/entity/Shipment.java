@@ -1,4 +1,4 @@
-package com.ecommerce.paymentservice.entity;
+package com.example.shipping_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,13 +8,15 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Payment {
+public class Shipment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String orderId;
-    private Double amount;
+    private Long orderId;
+
     private String status;
+
+    private String address;
 }
