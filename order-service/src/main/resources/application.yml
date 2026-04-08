@@ -1,15 +1,41 @@
-# Dev-only overrides (application.properties is the source of truth for Docker)
-spring:
-  application:
-    name: order-service
-
-  cloud:
-    config:
-      enabled: false
-      import-check:
-        enabled: false
-
+# Dev-only overrides (port and DB are in application.properties)
 logging:
   level:
-    com.ecommerce.orderservice: DEBUG
-    org.hibernate.SQL: DEBUG
+    com.ecommerce: DEBUG
+    io.github.resilience4j: INFO
+
+# Resilience4j Circuit Breaker configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventoryCheckCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+      inventoryReserveCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+
+# Micrometer / Zipkin tracing
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,circuitbreakerevents,metrics

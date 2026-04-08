@@ -1,0 +1,3 @@
+# Helm deployment templates - see values.yaml for configuration
+# Deploy all microservices as Kubernetes Deployments and Services
+# Usage: helm install ecommerce ./k8s/helm/ecommerce -f values.yaml
