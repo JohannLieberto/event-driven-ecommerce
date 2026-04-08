@@ -108,6 +108,7 @@
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
+
         <!-- H2 for testing -->
         <dependency>
             <groupId>com.h2database</groupId>

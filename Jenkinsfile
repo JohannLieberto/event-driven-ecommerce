@@ -1,1 +1,190 @@
-cGlwZWxpbmUgewogICAgYWdlbnQgYW55CgogICAgdG9vbHMgewogICAgICAgIG1hdmVuICdNYXZlbiAzJwogICAgICAgIGpkayAnSkRLLTE3JwogICAgfQoKICAgIGVudmlyb25tZW50IHsKICAgICAgICBNQVZFTl9PUFRTID0gJy1YbXgxMDI0bSAtRG9yZy5qZW5raW5zY2kucGx1Z2lucy5kdXJhYmxldGFzay5Cb3VybmVTaGVsbFNjcmlwdC5IRUFSVEJFQVRDSEVDS19JTlRFUlZBTD04NjQwMCcKICAgICAgICBDT01QT1NFX1BST0pFQ1RfTkFNRSA9ICdlY29tbWVyY2UtY2knCiAgICAgICAgSEVMTV9SRUxFQVNFX05BTUUgPSAnZWNvbW1lcmNlJwogICAgICAgIEhFTE1fQ0hBUlRfUEFUSCA9ICdrOHMvaGVsbS9lY29tbWVyY2UnCiAgICAgICAgS1VCRUNPX05BTUVTUEFDRT0gJ2Vjb21tZXJjZScKICAgIH0KCiAgICBzdGFnZXMgewogICAgICAgIHN0YWdlKCdDaGVja291dCcpIHsKICAgICAgICAgICAgc3RlcHMgewogICAgICAgICAgICAgICAgZWNobyAnQ2hlY2tpbmcgb3V0IHNvdXJjZSBjb2RlLi4uJwogICAgICAgICAgICAgICAgY2hlY2tvdXQgc2NtCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHN0YWdlKCdCdWlsZCcpIHsKICAgICAgICAgICAgc3RlcHMgewogICAgICAgICAgICAgICAgZWNobyAnQnVpbGRpbmcgYWxsIG1vZHVsZXMuLi4nCiAgICAgICAgICAgICAgICBzaCAnbXZuIGNsZWFuIGNvbXBpbGUgLURza2lwVGVzdHMnCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHN0YWdlKCdUZXN0ICYgQ292ZXJhZ2UnKSB7CiAgICAgICAgICAgIHN0ZXBzIHsKICAgICAgICAgICAgICAgIGVjaG8gJ1J1bm5pbmcgdGVzdHMgYW5kIGdlbmVyYXRpbmcgY292ZXJhZ2UuLi4nCiAgICAgICAgICAgICAgICBzaCAnbXZuIHZlcmlmeScKICAgICAgICAgICAgfQogICAgICAgICAgICBwb3N0IHsKICAgICAgICAgICAgICAgIGFsd2F5cyB7CiAgICAgICAgICAgICAgICAgICAganVuaXQgYWxsb3dFbXB0eVJlc3VsdHM6IHRydWUsIHRlc3RSZXN1bHRzOiAnKiovdGFyZ2V0L3N1cmVmaXJlLXJlcG9ydHMvVEVTVC0qLnhtbCcKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KCiAgICAgICAgc3RhZ2UoJ1BhY2thZ2UnKSB7CiAgICAgICAgICAgIHN0ZXBzIHsKICAgICAgICAgICAgICAgIGVjaG8gJ1BhY2thZ2luZyBhcHBsaWNhdGlvbnMuLi4nCiAgICAgICAgICAgICAgICBzaCAnbXZuIHBhY2thZ2UgLURza2lwVGVzdHMnCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHN0YWdlKCdDb2RlIFF1YWxpdHkgQW5hbHlzaXMnKSB7CiAgICAgICAgICAgIHN0ZXBzIHsKICAgICAgICAgICAgICAgIGVjaG8gJ1J1bm5pbmcgU29uYXJRdWJlIGFuYWx5c2lzLi4uJwogICAgICAgICAgICAgICAgc2ggJ2VjaG8gIj09PSBJQUNPQ08gWE1MIEZJTEVTIEZPVU5EID09PSInCiAgICAgICAgICAgICAgICBzaCAnZmluZCAuIC1uYW1lICJqYWNvY28ueG1sIiAyPi9kZXYvbnVsbCB8fCBlY2hvICJOTyBqYWNvY28ueG1sIGZpbGVzIGZvdW5kISInCiAgICAgICAgICAgICAgICBzaCAnZWNobyAiPT09IEVORCAiJwogICAgICAgICAgICAgICAgd2l0aENyZWRlbnRpYWxzKFtzdHJpbmcoY3JlZGVudGlhbHNJZDogJ3NvbmFycXViZS10b2tlbicsIHZhcmlhYmxlOiAnU09OQVJfVE9LRU4nKV0pIHsKICAgICAgICAgICAgICAgICAgICB3aXRoU29uYXJRdWJlRW52KCdTb25hclF1YmUtTG9jYWwnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHNoICcnJwogICAgICAgICAgICAgICAgICAgICAgICAgICAgbXZuIHZlcmlmeSBzb25hcjpzb25hciBcCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLURzb25hci5wcm9qZWN0S2V5PWV2ZW50LWRyaXZlbi1lY29tbWVyY2UgXAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC1Ec29uYXIucHJvamVjdE5hbWU9IkV2ZW50LURyaXZlbiBFLUNvbW1lcmNlIiBcCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLURzb25hci50b2tlbj0kU09OQVJfVE9LRU4gXAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC1Ec29uYXIuY292ZXJhZ2UuamFjb2NvLnhtbFJlcG9ydFBhdGhzPW9yZGVyLXNlcnZpY2UvdGFyZ2V0L3NpdGUvamFjb2NvL2phY29jby54bWwsaW52ZW50b3J5LXNlcnZpY2UvdGFyZ2V0L3NpdGUvamFjb2NvL2phY29jby54bWwsYXBpLWdhdGV3YXkvdGFyZ2V0L3NpdGUvamFjb2NvL2phY29jby54bWwsZXVyZWthLXNlcnZlci90YXJnZXQvc2l0ZS9qYWNvY28vamFjb2NvLnhtbCxjb25maWctc2VydmVyL3RhcmdldC9zaXRlL2phY29jby9qYWNvY28ueG1sLHBheW1lbnQtc2VydmljZS90YXJnZXQvc2l0ZS9qYWNvY28vamFjb2NvLnhtbCxzaGlwcGluZy1zZXJ2aWNlL3RhcmdldC9zaXRlL2phY29jby9qYWNvY28ueG1sLG5vdGlmaWNhdGlvbi1zZXJ2aWNlL3RhcmdldC9zaXRlL2phY29jby9qYWNvY28ueG1sCiAgICAgICAgICAgICAgICAgICAgICAgICcnJwogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KCiAgICAgICAgc3RhZ2UoJ1F1YWxpdHkgR2F0ZScpIHsKICAgICAgICAgICAgc3RlcHMgewogICAgICAgICAgICAgICAgZWNobyAnQ2hlY2tpbmcgcXVhbGl0eSBnYXRlLi4uJwogICAgICAgICAgICAgICAgc2xlZXAodGltZTogMzAsIHVuaXQ6ICdTRUNPTkRTJykKICAgICAgICAgICAgICAgIHRpbWVvdXQodGltZTogMTUsIHVuaXQ6ICdNSU5VVEVTJykgewogICAgICAgICAgICAgICAgICAgIHdhaXRGb3JRdWFsaXR5R2F0ZSBhYm9ydFBpcGVsaW5lOiBmYWxzZQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBzdGFnZSgnQnVpbGQgRG9ja2VyIEltYWdlcycpIHsKICAgICAgICAgICAgc3RlcHMgewogICAgICAgICAgICAgICAgZWNobyAnQnVpbGRpbmcgRG9ja2VyIGltYWdlcy4uLicKICAgICAgICAgICAgICAgIHNoICJkb2NrZXIgYnVpbGQgLXQgZXZlbnQtZHJpdmVuLWVjb21tZXJjZS9vcmRlci1zZXJ2aWNlOiR7QlVJTERfTlVNQkVSfSBvcmRlci1zZXJ2aWNlLyIKICAgICAgICAgICAgICAgIHNoICJkb2NrZXIgYnVpbGQgLXQgZXZlbnQtZHJpdmVuLWVjb21tZXJjZS9pbnZlbnRvcnktc2VydmljZToke0JVSUxEX05VTUJFUn0gaW52ZW50b3J5LXNlcnZpY2UvIgogICAgICAgICAgICAgICAgc2ggImRvY2tlciBidWlsZCAtdCBldmVudC1kcml2ZW4tZWNvbW1lcmNlL3BheW1lbnQtc2VydmljZToke0JVSUxEX05VTUJFUn0gcGF5bWVudC1zZXJ2aWNlLyIKICAgICAgICAgICAgICAgIHNoICJkb2NrZXIgYnVpbGQgLXQgZXZlbnQtZHJpdmVuLWVjb21tZXJjZS9zaGlwcGluZy1zZXJ2aWNlOiR7QlVJTERfTlVNQkVSfSBzaGlwcGluZy1zZXJ2aWNlLyIKICAgICAgICAgICAgICAgIHNoICJkb2NrZXIgYnVpbGQgLXQgZXZlbnQtZHJpdmVuLWVjb21tZXJjZS9ub3RpZmljYXRpb24tc2VydmljZToke0JVSUxEX05VTUJFUn0gbm90aWZpY2F0aW9uLXNlcnZpY2UvIgogICAgICAgICAgICAgICAgc2ggImRvY2tlciBidWlsZCAtdCBldmVudC1kcml2ZW4tZWNvbW1lcmNlL2V1cmVrYS1zZXJ2ZXI6JHtCVUlMRF9OVU1CRVJ9IGV1cmVrYS1zZXJ2ZXIvIgogICAgICAgICAgICAgICAgc2ggImRvY2tlciBidWlsZCAtdCBldmVudC1kcml2ZW4tZWNvbW1lcmNlL2NvbmZpZy1zZXJ2ZXI6JHtCVUlMRF9OVU1CRVJ9IGNvbmZpZy1zZXJ2ZXIvIgogICAgICAgICAgICAgICAgc2ggImRvY2tlciBidWlsZCAtdCBldmVudC1kcml2ZW4tZWNvbW1lcmNlL2FwaS1nYXRld2F5OiR7QlVJTERfTlVNQkVSfSBhcGktZ2F0ZXdheS8iCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHN0YWdlKCdEZXBsb3kgdG8gTG9jYWwgRW52aXJvbm1lbnQnKSB7CiAgICAgICAgICAgIHN0ZXBzIHsKICAgICAgICAgICAgICAgIGVjaG8gJ0RlcGxveWluZyBDSSBhcHAgc2VydmljZXMgKHByb2plY3Q6IGVjb21tZXJjZS1jaSkuLi4nCiAgICAgICAgICAgICAgICBzaCAnZG9ja2VyIGNvbXBvc2UgLXAgZWNvbW1lcmNlLWNpIHVwIC1kIC0tZm9yY2UtcmVjcmVhdGUgLS1uby1kZXBzIG9yZGVyLXNlcnZpY2UgaW52ZW50b3J5LXNlcnZpY2UgcGF5bWVudC1zZXJ2aWNlIHNoaXBwaW5nLXNlcnZpY2Ugbm90aWZpY2F0aW9uLXNlcnZpY2UgZXVyZWthLXNlcnZlciBjb25maWctc2VydmVyIGFwaS1nYXRld2F5IG9yZGVyLWRiIGludmVudG9yeS1kYiBwYXltZW50LWRiIHNoaXBwaW5nLWRiJwogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBzdGFnZSgnS2FyYXRlIEFQSSBUZXN0cycpIHsKICAgICAgICAgICAgc3RlcHMgewogICAgICAgICAgICAgICAgZWNobyAnUnVubmluZyBLYXJhdGUgQVBJIGludGVncmF0aW9uIHRlc3RzLi4uJwogICAgICAgICAgICAgICAgc2ggJ21zZWVwIDMwJwogICAgICAgICAgICAgICAgc2ggJ212biB0ZXN0IC1wbCBrYXJhdGUtdGVzdHMgLVBrYXJhdGUtdGVzdHMgLURrYXJhdGUuZW52PWRvY2tlcicKICAgICAgICAgICAgfQogICAgICAgICAgICBwb3N0IHsKICAgICAgICAgICAgICAgIGFsd2F5cyB7CiAgICAgICAgICAgICAgICAgICAganVuaXQgYWxsb3dFbXB0eVJlc3VsdHM6IHRydWUsIHRlc3RSZXN1bHRzOiAna2FyYXRlLXRlc3RzL3RhcmdldC9zdXJlZmlyZS1yZXBvcnRzL1RFU1QtKi54bWwnCiAgICAgICAgICAgICAgICAgICAgcHVibGlzaEhUTUwoWwogICAgICAgICAgICAgICAgICAgICAgICByZXBvcnREaXI6ICdrYXJhdGUtdGVzdHMvdGFyZ2V0L2thcmF0ZS1yZXBvcnRzJywKICAgICAgICAgICAgICAgICAgICAgICAgcmVwb3J0RmlsZXM6ICdrYXJhdGUtc3VtbWFyeS5odG1sJywKICAgICAgICAgICAgICAgICAgICAgICAgcmVwb3J0TmFtZTogJ0thcmF0ZSBBQ0kgVGVzdCBSZXBvcnQnLAogICAgICAgICAgICAgICAgICAgICAgICBrZWVwQWxsOiB0cnVlLAogICAgICAgICAgICAgICAgICAgICAgICBhbHdheXNMaW5rVG9MYXN0QnVpbGQ6IHRydWUsCiAgICAgICAgICAgICAgICAgICAgICAgIGFsbG93TWlzc2luZzogdHJ1ZQogICAgICAgICAgICAgICAgICAgIF0pCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIHN0YWdlKCdEZXBsb3kgdG8gS3ViZXJuZXRlcycpIHsKICAgICAgICAgICAgd2hlbiB7IGJyYW5jaCAnZGV2ZWxvcCcgfQogICAgICAgICAgICBzdGVwcyB7CiAgICAgICAgICAgICAgICBlY2hvICdEZXBsb3lpbmcgdG8gS3ViZXJuZXRlcyB2aWEgSGVsbS4uLicKICAgICAgICAgICAgICAgIHNoICcnJwogICAgICAgICAgICAgICAgICAgIGhlbG0gdXBncmFkZSAtLWluc3RhbGwgJHtIRUxNX1JFTEVBU0VfTkFNRX0gJHtIRUxNX0NIQVJUX1BBVEh9IFwKICAgICAgICAgICAgICAgICAgICAgICAgLS1uYW1lc3BhY2UgJHtLVUJFQ09fTkFNRVNQQUNFfSBcCiAgICAgICAgICAgICAgICAgICAgICAgIC0tY3JlYXRlLW5hbWVzcGFjZSBcCiAgICAgICAgICAgICAgICAgICAgICAgIC0tc2V0IGdsb2JhbC5pbWFnZVRhZz0ke0JVSUxEX05VTUJFUn0gXAogICAgICAgICAgICAgICAgICAgICAgICAtLXdhaXQgLS10aW1lb3V0IDEwbQogICAgICAgICAgICAgICAgJycnCiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CgogICAgcG9zdCB7CiAgICAgICAgc3VjY2VzcyB7CiAgICAgICAgICAgIGVjaG8gJ1BpcGVsaW5lIGNvbXBsZXRlZCBzdWNjZXNzZnVsbHkhJwogICAgICAgIH0KICAgICAgICBmYWlsdXJlIHsKICAgICAgICAgICAgZWNobyAnUGlwZWxpbmUgZmFpbGVkISBDaGVjayBsb2dzIGFib3ZlLicKICAgICAgICB9CiAgICAgICAgYWx3YXlzIHsKICAgICAgICAgICAgZWNobyAnUHVibGlzaGluZyBjb3ZlcmFnZSByZXBvcnQuLi4nCiAgICAgICAgICAgIHB1Ymxpc2hIVE1MKFsKICAgICAgICAgICAgICAgIHJlcG9ydERpcjogJ29yZGVyLXNlcnZpY2UvdGFyZ2V0L3NpdGUvamFjb2NvJywKICAgICAgICAgICAgICAgIHJlcG9ydEZpbGVzOiAnaW5kZXguaHRtbCcsCiAgICAgICAgICAgICAgICByZXBvcnROYW1lOiAnT3JkZXIgU2VydmljZSBDb3ZlcmFnZSBSZXBvcnQnLAogICAgICAgICAgICAgICAga2VlcEFsbDogdHJ1ZSwKICAgICAgICAgICAgICAgIGFsd2F5c0xpbmtUb0xhc3RCdWlsZDogdHJ1ZSwKICAgICAgICAgICAgICAgIGFsbG93TWlzc2luZzogdHJ1ZQogICAgICAgICAgICBdKQogICAgICAgIH0KICAgIH0KfQ==
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'HiteshKhade'
+        MAVEN_OPTS = '-Dmaven.test.failure.ignore=false'
+        KARATE_ENV = 'ci'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo '=== Checking out source code ==='
+                checkout scm
+            }
+        }
+
+        stage('Build All Services') {
+            steps {
+                echo '=== Building all microservices ==='
+                sh 'mvn clean package -DskipTests -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service'
+            }
+        }
+
+        stage('Unit Tests') {
+            parallel {
+                stage('Test order-service') {
+                    steps {
+                        sh 'mvn test -pl order-service'
+                    }
+                    post {
+                        always {
+                            junit 'order-service/target/surefire-reports/*.xml'
+                        }
+                    }
+                }
+                stage('Test inventory-service') {
+                    steps {
+                        sh 'mvn test -pl inventory-service'
+                    }
+                    post {
+                        always {
+                            junit 'inventory-service/target/surefire-reports/*.xml'
+                        }
+                    }
+                }
+                stage('Test payment-service') {
+                    steps {
+                        sh 'mvn test -pl payment-service'
+                    }
+                    post {
+                        always {
+                            junit 'payment-service/target/surefire-reports/*.xml'
+                        }
+                    }
+                }
+                stage('Test shipping-service') {
+                    steps {
+                        sh 'mvn test -pl shipping-service'
+                    }
+                    post {
+                        always {
+                            junit 'shipping-service/target/surefire-reports/*.xml'
+                        }
+                    }
+                }
+                stage('Test notification-service') {
+                    steps {
+                        sh 'mvn test -pl notification-service'
+                    }
+                    post {
+                        always {
+                            junit 'notification-service/target/surefire-reports/*.xml'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Start Infrastructure') {
+            steps {
+                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
+                sh 'docker-compose up -d --build'
+
+                echo '=== Waiting for Kafka to become fully healthy ==='
+                // Poll Kafka readiness: retry every 5s for up to 120s total
+                sh '''
+                    RETRIES=24
+                    COUNT=0
+                    until docker exec kafka kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+                        COUNT=$((COUNT + 1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Kafka did not become ready after 120 seconds. Aborting."
+                            docker-compose logs kafka
+                            exit 1
+                        fi
+                        echo "Kafka not ready yet... attempt $COUNT/$RETRIES. Retrying in 5s."
+                        sleep 5
+                    done
+                    echo "Kafka is ready after $((COUNT * 5))s."
+                '''
+
+                echo '=== Waiting for all Spring services to register with Eureka ==='
+                sh 'sleep 45'
+            }
+        }
+
+        stage('Karate API Tests') {
+            steps {
+                echo '=== Running Karate API and E2E tests ==='
+                sh 'mvn test -pl karate-tests -Dkarate.env=ci'
+            }
+            post {
+                always {
+                    junit 'karate-tests/target/surefire-reports/*.xml'
+                    publishHTML(target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'karate-tests/target/karate-reports',
+                        reportFiles: 'karate-summary.html',
+                        reportName: 'Karate Test Report'
+                    ])
+                }
+            }
+        }
+
+        stage('Stop Infrastructure') {
+            steps {
+                echo '=== Tearing down Docker Compose ==='
+                sh 'docker-compose down -v'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo '=== Building and pushing Docker images to DockerHub (HiteshKhade) ==='
+                script {
+                    def services = [
+                        'eureka-server', 'api-gateway', 'order-service',
+                        'inventory-service', 'payment-service',
+                        'shipping-service', 'notification-service'
+                    ]
+                    services.each { svc ->
+                        sh "docker build -t ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ./${svc}"
+                        sh "docker tag ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ${DOCKER_REGISTRY}/${svc}:latest"
+                        sh "docker push ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_REGISTRY}/${svc}:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo '=== Deploying to Kubernetes ==='
+                sh 'kubectl apply -f k8s/'
+                sh "kubectl set image deployment/order-service order-service=${DOCKER_REGISTRY}/order-service:${BUILD_NUMBER} -n ecommerce"
+                sh "kubectl set image deployment/inventory-service inventory-service=${DOCKER_REGISTRY}/inventory-service:${BUILD_NUMBER} -n ecommerce"
+                sh "kubectl set image deployment/payment-service payment-service=${DOCKER_REGISTRY}/payment-service:${BUILD_NUMBER} -n ecommerce"
+                sh "kubectl set image deployment/shipping-service shipping-service=${DOCKER_REGISTRY}/shipping-service:${BUILD_NUMBER} -n ecommerce"
+                sh "kubectl set image deployment/notification-service notification-service=${DOCKER_REGISTRY}/notification-service:${BUILD_NUMBER} -n ecommerce"
+                sh 'kubectl rollout status deployment/order-service -n ecommerce'
+                sh 'kubectl rollout status deployment/payment-service -n ecommerce'
+                sh 'kubectl rollout status deployment/shipping-service -n ecommerce'
+                sh 'kubectl rollout status deployment/notification-service -n ecommerce'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '=== Pipeline PASSED ==='
+        }
+        failure {
+            echo '=== Pipeline FAILED - check logs above ==='
+            sh 'docker-compose logs --tail=50 || true'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
