@@ -17,6 +17,9 @@
     <description>Microservice for managing customer orders</description>
     <packaging>jar</packaging>
 
+    <properties>
+        <java.version>17</java.version>
+    </properties>
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
@@ -107,6 +110,17 @@
 
     <build>
         <plugins>
+            <!-- ✅ FORCE JAVA 17 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+
+            <!-- Spring Boot Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

@@ -6,15 +6,17 @@ spring:
     password:
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    defer-datasource-initialization: true
+    show-sql: false
 
   h2:
     console:
       enabled: true
 
-eureka:
-  client:
-    enabled: false
+  kafka:
+    listener:
+      auto-startup: false
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration

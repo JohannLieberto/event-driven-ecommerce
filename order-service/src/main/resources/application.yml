@@ -13,3 +13,10 @@ logging:
   level:
     com.ecommerce.orderservice: DEBUG
     org.hibernate.SQL: DEBUG
+
+kafka:
+  bootstrap-servers: localhost:9092
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration

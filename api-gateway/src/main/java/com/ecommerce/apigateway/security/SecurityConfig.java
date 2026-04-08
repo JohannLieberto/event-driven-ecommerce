@@ -19,13 +19,19 @@ public class SecurityConfig {
                                                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         return http
                 .csrf(CsrfSpec::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((exchange, ex) -> {
+                            exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        })
+                )
+                .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/auth/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .pathMatchers("/public/**").permitAll()
-                        .pathMatchers("/api/**").permitAll()
-                        .anyExchange().permitAll()
+                        .anyExchange().authenticated()
                 )
                 .build();
     }

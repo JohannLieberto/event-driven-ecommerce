@@ -1,6 +1,7 @@
 package com.ecommerce.orderservice.controller;
 
 import com.ecommerce.orderservice.client.InventoryClient;
+import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -16,6 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,18 +25,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "eureka.client.enabled=false",
-    "eureka.client.register-with-eureka=false",
-    "eureka.client.fetch-registry=false",
-    "spring.cloud.config.enabled=false",
-    "spring.cloud.config.import-check.enabled=false",
-    "spring.datasource.url=jdbc:h2:mem:integrationdb;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
+        "eureka.client.enabled=false",
+        "eureka.client.register-with-eureka=false",
+        "eureka.client.fetch-registry=false",
+        "spring.cloud.config.enabled=false",
+        "spring.cloud.config.import-check.enabled=false",
+        "spring.datasource.url=jdbc:h2:mem:integrationdb;DB_CLOSE_DELAY=-1",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
 })
 class OrderControllerIntegrationTest {
 
@@ -44,9 +45,17 @@ class OrderControllerIntegrationTest {
     @MockBean
     private InventoryClient inventoryClient;
 
+    // ✅ FINAL FIX: MOCK THE ACTUAL CLASS USED
+    @MockBean
+    private OrderEventPublisher orderEventPublisher;
+
     @BeforeEach
     void setup() {
+        // Mock inventory
         when(inventoryClient.checkStock(anyLong(), anyInt())).thenReturn(true);
+
+        // ✅ Prevent Kafka call completely
+        doNothing().when(orderEventPublisher).publishOrderCreated(any());
     }
 
     @Test
