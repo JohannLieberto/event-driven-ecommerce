@@ -6,12 +6,11 @@ import com.ecommerce.inventoryservice.service.InventoryService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -31,11 +30,9 @@ public class InventoryController {
 
     // GET ALL PRODUCTS
     @GetMapping
-    public ResponseEntity<Page<ProductResponse>> getAllProducts(Pageable pageable) {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
 
-        Page<ProductResponse> products =
-                inventoryService.getAllProducts(pageable);
-
+        List<ProductResponse> products = inventoryService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 
@@ -76,7 +73,7 @@ public class InventoryController {
     public ResponseEntity<StockCheckResponse> checkStock(
             @PathVariable Long productId,
             @RequestParam Integer quantity) {
-        
+
         StockCheckResponse response = inventoryService.checkStock(productId, quantity);
         return ResponseEntity.ok(response);
     }
@@ -90,7 +87,7 @@ public class InventoryController {
     public ResponseEntity<ProductResponse> reserveStock(
             @PathVariable Long productId,
             @Valid @RequestBody StockReservationRequest request) {
-        
+
         ProductResponse response = inventoryService.reserveStock(productId, request);
         return ResponseEntity.ok(response);
     }
@@ -104,7 +101,7 @@ public class InventoryController {
     public ResponseEntity<ProductResponse> releaseStock(
             @PathVariable Long productId,
             @Valid @RequestBody StockReservationRequest request) {
-        
+
         ProductResponse response = inventoryService.releaseStock(productId, request);
         return ResponseEntity.ok(response);
     }
