@@ -4,14 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.ServletWebRequest;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class GlobalExceptionHandlerTest {
 
@@ -70,12 +71,11 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleValidationException_withFieldError_returns400() {
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-        FieldError fieldError = new FieldError("orderRequest", "customerId", "must not be null");
-
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldError()).thenReturn(fieldError);
+        // Construct MethodArgumentNotValidException properly — Mockito cannot mock it on Java 25
+        Object target = new Object();
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "orderRequest");
+        bindingResult.addError(new FieldError("orderRequest", "customerId", "must not be null"));
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
         ResponseEntity<Map<String, Object>> response = handler.handleValidationException(ex);
 
@@ -87,11 +87,10 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleValidationException_withNoFieldError_returns400WithFallbackMessage() {
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldError()).thenReturn(null);
+        Object target = new Object();
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "orderRequest");
+        // No field errors added — getFieldError() returns null
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
         ResponseEntity<Map<String, Object>> response = handler.handleValidationException(ex);
 

@@ -47,7 +47,7 @@ public class InventoryService {
         return mapToResponse(saved);
     }
 
-    // GET ALL PRODUCTS
+    // GET ALL PRODUCTS — returns List (not Page) so REST response is a plain JSON array
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()
                 .stream()
@@ -92,7 +92,7 @@ public class InventoryService {
             logStockChange(productId, "ADD", request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
             return mapToResponse(updated);
-        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
+        } catch (OptimisticLockException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
@@ -122,7 +122,7 @@ public class InventoryService {
             logStockChange(productId, "RESERVE", request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
             return mapToResponse(updated);
-        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
+        } catch (OptimisticLockException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
@@ -138,7 +138,7 @@ public class InventoryService {
             logStockChange(productId, "RELEASE", request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
             return mapToResponse(updated);
-        } catch (OptimisticLockException | ObjectOptimisticLockingFailureException e) {
+        } catch (OptimisticLockException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
@@ -204,63 +204,5 @@ public class InventoryService {
         response.setFailureCount(failureCount);
         response.setResults(results);
         return response;
-    }
-
-    public void handleOrderCreated(OrderCreatedEvent event) {
-        try {
-            reserveOrderStock(event);
-            kafkaTemplate.send(
-                    "inventory.inventory-reserved",
-                    new InventoryReservedEvent(event.getOrderId(), event.getItems())
-            );
-        } catch (Exception e) {
-            kafkaTemplate.send(
-                    "inventory.inventory-failed",
-                    new InventoryFailedEvent(event.getOrderId(), e.getMessage())
-            );
-        }
-    }
-
-    public void handlePaymentFailed(PaymentFailedEvent event) {
-        List<StockChangeLog> reservations =
-                stockChangeLogRepository.findByOrderIdAndChangeType(event.getOrderId(), "RESERVE");
-        for (StockChangeLog log : reservations) {
-            boolean alreadyReleased = stockChangeLogRepository
-                    .existsByOrderIdAndProductIdAndChangeType(
-                            event.getOrderId(),
-                            log.getProductId(),
-                            "RELEASE"
-                    );
-            if (alreadyReleased) {
-                continue;
-            }
-            StockReservationRequest request = new StockReservationRequest();
-            request.setOrderId(event.getOrderId());
-            request.setQuantity(log.getQuantityChanged());
-            releaseStock(log.getProductId(), request);
-        }
-    }
-
-    @Transactional
-    public void reserveOrderStock(OrderCreatedEvent event) {
-        for (OrderItemEvent item : event.getItems()) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
-            if (product.getStockQuantity() < item.getQuantity()) {
-                throw new InsufficientStockException(
-                        "Insufficient stock for product " + item.getProductId()
-                );
-            }
-        }
-        for (OrderItemEvent item : event.getItems()) {
-            StockReservationRequest request = new StockReservationRequest();
-            request.setOrderId(event.getOrderId());
-            request.setQuantity(item.getQuantity());
-            reserveStock(item.getProductId(), request);
-        }
-    }
-
-    public void handlePaymentProcessed(PaymentProcessedEvent event) {
-        // Stock already deducted during reservation.
     }
 }

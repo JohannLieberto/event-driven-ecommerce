@@ -23,13 +23,18 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    // Paths that do NOT require a JWT token
+    // Paths that do NOT require a JWT token.
+    // NOTE: /api is open because this is an internal dev/test environment without auth.
+    // IMPORTANT: use startsWith matching, so entries must NOT have a trailing slash
+    // e.g. "/api" matches "/api/orders", "/api/inventory/health" etc.
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/login",
             "/auth/register",
             "/actuator/health",
             "/actuator/info",
-            "/eureka"
+            "/eureka",
+            "/api",
+            "/public"
     );
 
     @Override
@@ -37,13 +42,11 @@ public class JwtAuthenticationFilter implements WebFilter {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        // Skip JWT check for public paths
         boolean isPublic = PUBLIC_PATHS.stream().anyMatch(path::startsWith);
         if (isPublic) {
             return chain.filter(exchange);
         }
 
-        // Extract token from Authorization header
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -53,13 +56,11 @@ public class JwtAuthenticationFilter implements WebFilter {
 
         String token = authHeader.substring(7);
 
-        // Validate token
         if (!tokenProvider.validateToken(token)) {
             return onError(exchange, "Invalid or expired token",
                     HttpStatus.UNAUTHORIZED);
         }
 
-        // Extract username and forward in header
         String username = tokenProvider.getUsernameFromToken(token);
         ServerHttpRequest modifiedRequest = request.mutate()
                 .header("X-User-Id", username)
