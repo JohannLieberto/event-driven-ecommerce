@@ -2,6 +2,7 @@ package com.ecommerce.inventoryservice.dto;
 
 public class PaymentProcessedEvent {
     private Long orderId;
+    private String status;
 
     public PaymentProcessedEvent() {
     }
@@ -12,5 +13,13 @@ public class PaymentProcessedEvent {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
