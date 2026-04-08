@@ -2,10 +2,21 @@ spring:
   application:
     name: inventory-service
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: inventory-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
   datasource:
-    url: jdbc:postgresql://localhost:5433/inventory_db
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5435/inventory_db
+    username: inventoryuser
+    password: inventorypass
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

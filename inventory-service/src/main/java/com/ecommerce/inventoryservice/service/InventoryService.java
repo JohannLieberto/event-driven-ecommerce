@@ -1,21 +1,17 @@
 package com.ecommerce.inventoryservice.service;
 
 import com.ecommerce.inventoryservice.dto.*;
-
 import com.ecommerce.inventoryservice.entity.Product;
 import com.ecommerce.inventoryservice.entity.StockChangeLog;
-
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.exception.ProductNotFoundException;
 import com.ecommerce.inventoryservice.exception.StockConcurrencyException;
-
 import com.ecommerce.inventoryservice.repository.ProductRepository;
 import com.ecommerce.inventoryservice.repository.StockChangeLogRepository;
-
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,11 +24,17 @@ public class InventoryService {
 
     private static final String PRODUCT_NOT_FOUND = "Product not found";
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final StockChangeLogRepository stockChangeLogRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Autowired
-    private StockChangeLogRepository stockChangeLogRepository;
+    public InventoryService(ProductRepository productRepository,
+                            StockChangeLogRepository stockChangeLogRepository,
+                            KafkaTemplate<String, Object> kafkaTemplate) {
+        this.productRepository = productRepository;
+        this.stockChangeLogRepository = stockChangeLogRepository;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     // CREATE PRODUCT
     public ProductResponse createProduct(ProductRequest request) {
