@@ -15,24 +15,21 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.5</version>
         <relativePath/>
     </parent>
 
     <!-- Properties -->
     <properties>
-        <java.version>17</java.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <java.version>21</java.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <mockito.version>5.14.2</mockito.version>
         <sonar.coverage.exclusions>
-            <!-- DTOs and request/response objects -->
             **/dto/**,
-            <!-- Entity/model classes -->
             **/entity/**,
             **/model/**,
-            <!-- Infrastructure-only modules -->
             **/EurekaServerApplication.java,
             **/ConfigServerApplication.java,
-            <!-- Application entry points -->
             **/*Application.java
         </sonar.coverage.exclusions>
         <sonar.exclusions>
@@ -42,7 +39,6 @@
         </sonar.exclusions>
     </properties>
 
-    <!-- Spring Cloud Dependency Management -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -52,28 +48,63 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>2.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bom</artifactId>
+                <version>1.2.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.intuit.karate</groupId>
+                <artifactId>karate-junit5</artifactId>
+                <version>1.4.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- Modules - coverage-report MUST come last so services are built first -->
+    <!-- karate-tests MUST come before coverage-report -->
     <modules>
         <module>eureka-server</module>
         <module>config-server</module>
         <module>order-service</module>
         <module>inventory-service</module>
+        <module>payment-service</module>
+        <module>shipping-service</module>
+        <module>notification-service</module>
         <module>api-gateway</module>
-        <module>coverage-report</module>
         <module>karate-tests</module>
+        <module>coverage-report</module>
     </modules>
 
-    <!-- Build Configuration -->
     <build>
         <plugins>
-            <!-- JaCoCo Plugin for Code Coverage -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-XX:+EnableDynamicAgentLoading --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED -Djdk.attach.allowAttachSelf=true</argLine>
+                </configuration>
+            </plugin>
+            <!-- JaCoCo 0.8.12 supports Java 21 -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <goals>
@@ -90,17 +121,33 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <!-- Exclude DTOs - no business logic -->
                         <exclude>**/dto/**</exclude>
-                        <!-- Exclude entities/models - no business logic -->
                         <exclude>**/entity/**</exclude>
                         <exclude>**/model/**</exclude>
-                        <!-- Exclude application entry points -->
                         <exclude>**/*Application.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>karate-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/*KarateTest.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
