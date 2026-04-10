@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface StockChangeLogRepository extends JpaRepository<StockChangeLog, Long> {
 
-    List<StockChangeLog> findByProductIdOrderByTimestampDesc(Long productId);
+    List<StockChangeLog> findByOrderIdAndChangeType(Long orderId, String changeType);
 
+    boolean existsByOrderIdAndProductIdAndChangeType(Long orderId, Long productId, String changeType);
 }

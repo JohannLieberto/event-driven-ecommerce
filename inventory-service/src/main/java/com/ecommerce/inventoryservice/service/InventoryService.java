@@ -1,21 +1,19 @@
 package com.ecommerce.inventoryservice.service;
 
 import com.ecommerce.inventoryservice.dto.*;
-
 import com.ecommerce.inventoryservice.entity.Product;
 import com.ecommerce.inventoryservice.entity.StockChangeLog;
-
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.exception.ProductNotFoundException;
 import com.ecommerce.inventoryservice.exception.StockConcurrencyException;
-
 import com.ecommerce.inventoryservice.repository.ProductRepository;
 import com.ecommerce.inventoryservice.repository.StockChangeLogRepository;
-
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,13 +24,20 @@ import java.util.stream.Collectors;
 @Transactional
 public class InventoryService {
 
+    private static final Logger log = LoggerFactory.getLogger(InventoryService.class);
     private static final String PRODUCT_NOT_FOUND = "Product not found";
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final StockChangeLogRepository stockChangeLogRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Autowired
-    private StockChangeLogRepository stockChangeLogRepository;
+    public InventoryService(ProductRepository productRepository,
+                            StockChangeLogRepository stockChangeLogRepository,
+                            KafkaTemplate<String, Object> kafkaTemplate) {
+        this.productRepository = productRepository;
+        this.stockChangeLogRepository = stockChangeLogRepository;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     // CREATE PRODUCT
     public ProductResponse createProduct(ProductRequest request) {
@@ -45,7 +50,7 @@ public class InventoryService {
         return mapToResponse(saved);
     }
 
-    // GET ALL PRODUCTS — returns List (not Page) so REST response is a plain JSON array
+    // GET ALL PRODUCTS
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()
                 .stream()
@@ -141,18 +146,54 @@ public class InventoryService {
         }
     }
 
+    // HANDLE ORDER CREATED (consumed by InventoryKafkaListener via orders.order-created)
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        log.info("[INVENTORY-SERVICE] Handling order.created for orderId={}", event.getOrderId());
+        if (event.getItems() == null || event.getItems().isEmpty()) {
+            log.warn("[INVENTORY-SERVICE] No items in order.created event for orderId={}", event.getOrderId());
+            return;
+        }
+        for (OrderCreatedEvent.OrderItem item : event.getItems()) {
+            StockReservationRequest req = new StockReservationRequest();
+            req.setQuantity(item.getQuantity());
+            req.setOrderId(event.getOrderId());
+            reserveStock(item.getProductId(), req);
+        }
+    }
+
+    // HANDLE PAYMENT PROCESSED (consumed by InventoryKafkaListener via payments.payment-processed)
+    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+        log.info("[INVENTORY-SERVICE] Handling payment.processed for orderId={} status={}",
+                event.getOrderId(), event.getStatus());
+    }
+
+    // HANDLE PAYMENT FAILED — release reserved stock (consumed via payments.payment-failed)
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+        log.info("[INVENTORY-SERVICE] Handling payment.failed for orderId={}, releasing stock", event.getOrderId());
+        if (event.getItems() == null || event.getItems().isEmpty()) {
+            log.warn("[INVENTORY-SERVICE] No items in payment.failed event for orderId={}", event.getOrderId());
+            return;
+        }
+        for (PaymentFailedEvent.OrderItem item : event.getItems()) {
+            StockReservationRequest req = new StockReservationRequest();
+            req.setQuantity(item.getQuantity());
+            req.setOrderId(event.getOrderId());
+            releaseStock(item.getProductId(), req);
+        }
+    }
+
     // LOG STOCK CHANGE
     private void logStockChange(Long productId, String type,
                                 Integer qty, Integer before,
                                 Integer after, Long orderId) {
-        StockChangeLog log = new StockChangeLog();
-        log.setProductId(productId);
-        log.setChangeType(type);
-        log.setQuantityChanged(qty);
-        log.setStockBefore(before);
-        log.setStockAfter(after);
-        log.setOrderId(orderId);
-        stockChangeLogRepository.save(log);
+        StockChangeLog log2 = new StockChangeLog();
+        log2.setProductId(productId);
+        log2.setChangeType(type);
+        log2.setQuantityChanged(qty);
+        log2.setStockBefore(before);
+        log2.setStockAfter(after);
+        log2.setOrderId(orderId);
+        stockChangeLogRepository.save(log2);
     }
 
     private ProductResponse mapToResponse(Product product) {
