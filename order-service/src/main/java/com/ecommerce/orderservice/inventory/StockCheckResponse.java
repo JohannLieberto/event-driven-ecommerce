@@ -1,4 +1,4 @@
-package com.ecommerce.orderservice.dto.inventory;
+package com.ecommerce.orderservice.inventory;
 
 public class StockCheckResponse {
 

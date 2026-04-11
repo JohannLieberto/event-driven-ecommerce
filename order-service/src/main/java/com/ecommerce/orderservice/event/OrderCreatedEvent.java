@@ -1,5 +1,7 @@
 package com.ecommerce.orderservice.event;
 
+import com.ecommerce.orderservice.dto.OrderItemEvent;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,10 +13,14 @@ public class OrderCreatedEvent {
     private List<OrderItemEvent> items;
     private LocalDateTime createdAt;
 
-    public OrderCreatedEvent() {}
+    public OrderCreatedEvent() {
+    }
 
-    public OrderCreatedEvent(Long orderId, Long customerId, String status,
-                              List<OrderItemEvent> items, LocalDateTime createdAt) {
+    public OrderCreatedEvent(Long orderId,
+                             Long customerId,
+                             String status,
+                             List<OrderItemEvent> items,
+                             LocalDateTime createdAt) {
         this.orderId = orderId;
         this.customerId = customerId;
         this.status = status;
@@ -22,36 +28,43 @@ public class OrderCreatedEvent {
         this.createdAt = createdAt;
     }
 
-    public Long getOrderId() { return orderId; }
-    public void setOrderId(Long orderId) { this.orderId = orderId; }
+    public Long getOrderId() {
+        return orderId;
+    }
 
-    public Long getCustomerId() { return customerId; }
-    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public Long getCustomerId() {
+        return customerId;
+    }
 
-    public List<OrderItemEvent> getItems() { return items; }
-    public void setItems(List<OrderItemEvent> items) { this.items = items; }
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getStatus() {
+        return status;
+    }
 
-    public static class OrderItemEvent {
-        private Long productId;
-        private Integer quantity;
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-        public OrderItemEvent() {}
+    public List<OrderItemEvent> getItems() {
+        return items;
+    }
 
-        public OrderItemEvent(Long productId, Integer quantity) {
-            this.productId = productId;
-            this.quantity = quantity;
-        }
+    public void setItems(List<OrderItemEvent> items) {
+        this.items = items;
+    }
 
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-        public Integer getQuantity() { return quantity; }
-        public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -14,24 +14,27 @@ import java.util.concurrent.CompletableFuture;
 public class OrderEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(OrderEventPublisher.class);
-    private static final String TOPIC = "order.created";
+
+    // ✅ MUST MATCH INVENTORY SERVICE
+    private static final String TOPIC = "orders.order-created";
 
     @Autowired
     private KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 
     public void publishOrderCreated(OrderCreatedEvent event) {
         CompletableFuture<SendResult<String, OrderCreatedEvent>> future =
-            kafkaTemplate.send(TOPIC, String.valueOf(event.getOrderId()), event);
+                kafkaTemplate.send(TOPIC, String.valueOf(event.getOrderId()), event);
 
         future.whenComplete((result, ex) -> {
             if (ex != null) {
                 log.error("[ORDER-SERVICE] Failed to publish order.created for orderId={}: {}",
-                    event.getOrderId(), ex.getMessage());
+                        event.getOrderId(), ex.getMessage());
             } else {
-                log.info("[ORDER-SERVICE] Published order.created for orderId={} to partition={} offset={}",
-                    event.getOrderId(),
-                    result.getRecordMetadata().partition(),
-                    result.getRecordMetadata().offset());
+                log.info("[ORDER-SERVICE] Published order.created for orderId={} to topic={} partition={} offset={}",
+                        event.getOrderId(),
+                        TOPIC,
+                        result.getRecordMetadata().partition(),
+                        result.getRecordMetadata().offset());
             }
         });
     }
