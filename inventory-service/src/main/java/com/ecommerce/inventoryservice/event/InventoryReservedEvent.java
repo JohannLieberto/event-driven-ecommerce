@@ -21,6 +21,9 @@ public class InventoryReservedEvent {
         this.reservedAt = reservedAt;
     }
 
+    public InventoryReservedEvent(Long orderId, Long productId, Integer quantity) {
+    }
+
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
 

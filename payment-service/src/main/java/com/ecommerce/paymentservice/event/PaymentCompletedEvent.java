@@ -1,5 +1,8 @@
 package com.ecommerce.paymentservice.event;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+
 import java.time.LocalDateTime;
 
 public class PaymentCompletedEvent {
@@ -35,4 +38,5 @@ public class PaymentCompletedEvent {
 
     public LocalDateTime getProcessedAt() { return processedAt; }
     public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
+
 }
