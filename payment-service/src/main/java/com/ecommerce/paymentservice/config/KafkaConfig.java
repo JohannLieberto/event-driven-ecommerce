@@ -32,9 +32,13 @@ public class KafkaConfig {
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
         config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.ecommerce.*");
+
+        // ✅ IMPORTANT
         config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderCreatedEvent.class.getName());
         config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+
         return new DefaultKafkaConsumerFactory<>(config);
     }
 

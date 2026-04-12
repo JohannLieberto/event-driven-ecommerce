@@ -13,8 +13,6 @@ import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,15 +29,10 @@ public class InventoryService {
     private final ProductRepository productRepository;
     private final StockChangeLogRepository stockChangeLogRepository;
 
-    // ✅ FIXED TYPE
-    private final KafkaTemplate<String, InventoryReservedEvent> kafkaTemplate;
-
     public InventoryService(ProductRepository productRepository,
-                            StockChangeLogRepository stockChangeLogRepository,
-                            KafkaTemplate<String, InventoryReservedEvent> kafkaTemplate) {
+                            StockChangeLogRepository stockChangeLogRepository) {
         this.productRepository = productRepository;
         this.stockChangeLogRepository = stockChangeLogRepository;
-        this.kafkaTemplate = kafkaTemplate;
     }
 
     // ===================== PRODUCT CRUD =====================
@@ -106,25 +99,18 @@ public class InventoryService {
         }
 
         int before = product.getStockQuantity();
-        product.setStockQuantity(before - request.getQuantity());
 
         try {
+            // ✅ FIX: reduce stock
+            product.setStockQuantity(before - request.getQuantity());
+
             Product updated = productRepository.save(product);
 
             logStockChange(productId, "RESERVE",
                     request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
 
-            // ✅ PUBLISH EVENT TO KAFKA
-            InventoryReservedEvent event = new InventoryReservedEvent(
-                    request.getOrderId(),
-                    productId,
-                    request.getQuantity()
-            );
-
-            kafkaTemplate.send("inventory.reserved", event);
-
-            log.info("✅ Published inventory.reserved event for orderId={}", request.getOrderId());
+            log.info("✅ Stock reserved for orderId={}", request.getOrderId());
 
             return mapToResponse(updated);
 
@@ -132,6 +118,71 @@ public class InventoryService {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
+
+    public ProductResponse releaseStock(Long productId, StockReservationRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
+        int before = product.getStockQuantity();
+
+        product.setStockQuantity(before + request.getQuantity());
+
+        Product updated = productRepository.save(product);
+
+        logStockChange(productId, "RELEASE",
+                request.getQuantity(), before,
+                updated.getStockQuantity(), request.getOrderId());
+
+        return mapToResponse(updated);
+    }
+
+    public ProductResponse addStock(Long productId, StockReservationRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
+        int before = product.getStockQuantity();
+        product.setStockQuantity(before + request.getQuantity());
+
+        Product updated = productRepository.save(product);
+
+        logStockChange(productId, "ADD",
+                request.getQuantity(), before,
+                updated.getStockQuantity(), request.getOrderId());
+
+        return mapToResponse(updated);
+    }
+
+    // ===================== EVENT HANDLERS =====================
+
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        log.info("📦 Handling order.created for orderId={}", event.getOrderId());
+
+        for (OrderItemEvent item : event.getItems()) {
+            StockReservationRequest req = new StockReservationRequest();
+            req.setQuantity(item.getQuantity());
+            req.setOrderId(event.getOrderId());
+
+            reserveStock(item.getProductId(), req);
+        }
+    }
+
+    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+        log.info("💰 Payment processed for orderId={}", event.getOrderId());
+    }
+
+    public void handlePaymentFailed(PaymentFailedEvent event) {
+        log.info("❌ Payment failed, releasing stock for orderId={}", event.getOrderId());
+
+        for (PaymentFailedEvent.OrderItem item : event.getItems()) {
+            StockReservationRequest req = new StockReservationRequest();
+            req.setQuantity(item.getQuantity());
+            req.setOrderId(event.getOrderId());
+
+            releaseStock(item.getProductId(), req);
+        }
+    }
+
+    // ===================== BULK =====================
 
     public BulkUpdateResponse bulkUpdateStock(BulkUpdateRequest request) {
 
@@ -184,83 +235,6 @@ public class InventoryService {
         response.setResults(results);
 
         return response;
-    }
-    public ProductResponse addStock(Long productId, StockReservationRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
-
-        int before = product.getStockQuantity();
-        product.setStockQuantity(before + request.getQuantity());
-
-        Product updated = productRepository.save(product);
-
-        logStockChange(productId, "ADD",
-                request.getQuantity(), before,
-                updated.getStockQuantity(), request.getOrderId());
-
-        return mapToResponse(updated);
-    }
-    @KafkaListener(
-            topics = "orders.order-created",
-            groupId = "inventory-order-group"
-    )
-    public void consumeOrderCreated(OrderCreatedEvent event) {
-        log.info("Received order.created event: {}", event.getOrderId());
-        handleOrderCreated(event);
-    }
-
-    @KafkaListener(
-            topics = "payment.completed",
-            groupId = "inventory-payment-group"
-    )
-    public void consumePaymentCompleted(PaymentProcessedEvent event) {
-        log.info("💰 Received payment.completed for orderId={}", event.getOrderId());
-        handlePaymentProcessed(event);
-    }
-    public ProductResponse releaseStock(Long productId, StockReservationRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
-
-        int before = product.getStockQuantity();
-        product.setStockQuantity(before + request.getQuantity());
-
-        Product updated = productRepository.save(product);
-
-        logStockChange(productId, "RELEASE",
-                request.getQuantity(), before,
-                updated.getStockQuantity(), request.getOrderId());
-
-        return mapToResponse(updated);
-    }
-
-    // ===================== EVENT HANDLERS =====================
-
-    public void handleOrderCreated(OrderCreatedEvent event) {
-        log.info("📦 Handling order.created for orderId={}", event.getOrderId());
-
-        for (OrderItemEvent item : event.getItems()) {
-            StockReservationRequest req = new StockReservationRequest();
-            req.setQuantity(item.getQuantity());
-            req.setOrderId(event.getOrderId());
-
-            reserveStock(item.getProductId(), req);
-        }
-    }
-
-    public void handlePaymentProcessed(PaymentProcessedEvent event) {
-        log.info("💰 Payment processed for orderId={}", event.getOrderId());
-    }
-
-    public void handlePaymentFailed(PaymentFailedEvent event) {
-        log.info("❌ Payment failed, releasing stock for orderId={}", event.getOrderId());
-
-        for (PaymentFailedEvent.OrderItem item : event.getItems()) {
-            StockReservationRequest req = new StockReservationRequest();
-            req.setQuantity(item.getQuantity());
-            req.setOrderId(event.getOrderId());
-
-            releaseStock(item.getProductId(), req);
-        }
     }
 
     // ===================== LOGGING =====================

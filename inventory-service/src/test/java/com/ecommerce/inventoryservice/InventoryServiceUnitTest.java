@@ -3,14 +3,12 @@ package com.ecommerce.inventoryservice;
 import com.ecommerce.inventoryservice.dto.*;
 import com.ecommerce.inventoryservice.entity.Product;
 import com.ecommerce.inventoryservice.entity.StockChangeLog;
-import com.ecommerce.inventoryservice.event.InventoryReservedEvent;
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.repository.ProductRepository;
 import com.ecommerce.inventoryservice.repository.StockChangeLogRepository;
 import com.ecommerce.inventoryservice.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,9 +22,6 @@ class InventoryServiceUnitTest {
     private ProductRepository productRepository;
     private StockChangeLogRepository stockChangeLogRepository;
 
-    // ✅ FIXED TYPE
-    private KafkaTemplate<String, InventoryReservedEvent> kafkaTemplate;
-
     private InventoryService inventoryService;
 
     @BeforeEach
@@ -34,17 +29,15 @@ class InventoryServiceUnitTest {
         productRepository = mock(ProductRepository.class);
         stockChangeLogRepository = mock(StockChangeLogRepository.class);
 
-        kafkaTemplate = mock(KafkaTemplate.class);
-
+        // ✅ FIXED: no KafkaTemplate
         inventoryService = new InventoryService(
                 productRepository,
-                stockChangeLogRepository,
-                kafkaTemplate
+                stockChangeLogRepository
         );
     }
 
     @Test
-    void handleOrderCreated_withSufficientStock_publishesInventoryReserved() {
+    void handleOrderCreated_withSufficientStock_reducesStock() {
 
         Product product = new Product();
         product.setId(4L);
@@ -68,9 +61,10 @@ class InventoryServiceUnitTest {
         // ✅ stock reduced
         assertEquals(7, product.getStockQuantity());
 
-        // ✅ Kafka event published
-        verify(kafkaTemplate).send(eq("inventory.reserved"), any(InventoryReservedEvent.class));
+        // ✅ DB save called
+        verify(productRepository).save(any(Product.class));
 
+        // ✅ stock log created
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));
     }
 
@@ -91,16 +85,14 @@ class InventoryServiceUnitTest {
         event.setOrderId(5002L);
         event.setItems(List.of(item));
 
-        // ✅ EXPECT EXCEPTION (your current service behavior)
         assertThrows(InsufficientStockException.class,
                 () -> inventoryService.handleOrderCreated(event));
 
         verify(productRepository, never()).save(any());
-        verify(kafkaTemplate, never()).send(anyString(), any());
     }
 
     @Test
-    void handlePaymentProcessed_confirmsReservation() {
+    void handlePaymentProcessed_doesNothing() {
 
         PaymentProcessedEvent event = new PaymentProcessedEvent();
         event.setOrderId(5003L);
@@ -109,7 +101,7 @@ class InventoryServiceUnitTest {
     }
 
     @Test
-    void handlePaymentFailed_releasesReservation() {
+    void handlePaymentFailed_releasesStock() {
 
         Product product = new Product();
         product.setId(4L);
@@ -128,7 +120,7 @@ class InventoryServiceUnitTest {
 
         inventoryService.handlePaymentFailed(event);
 
-        // ✅ stock released
+        // ✅ stock restored
         assertEquals(10, product.getStockQuantity());
 
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));

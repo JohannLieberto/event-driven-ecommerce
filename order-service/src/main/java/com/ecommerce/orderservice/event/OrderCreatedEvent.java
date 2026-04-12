@@ -1,6 +1,8 @@
 package com.ecommerce.orderservice.event;
 
 import com.ecommerce.orderservice.dto.OrderItemEvent;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
