@@ -1,4 +1,4 @@
-package com.example.shipping_service.config;
+package com.ecommerce.shippingservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -18,6 +18,9 @@
 
     <properties>
         <karate.version>1.5.1</karate.version>
+        <!-- Ensure Java 17 is used instead of 21 -->
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
         <!-- Skip JaCoCo entirely for integration/Karate tests - no bytecode to instrument here -->
         <jacoco.skip>true</jacoco.skip>
     </properties>
@@ -48,6 +51,14 @@
             </testResource>
         </testResources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
             <!-- Explicitly skip JaCoCo agent injection for this module -->
             <plugin>
                 <groupId>org.jacoco</groupId>

@@ -11,6 +11,16 @@ public class OrderCreatedEvent {
     private List<OrderItemEvent> items;
     private LocalDateTime createdAt;
 
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
+
+    private Double amount;
+
     public OrderCreatedEvent() {}
 
     public Long getOrderId() { return orderId; }
