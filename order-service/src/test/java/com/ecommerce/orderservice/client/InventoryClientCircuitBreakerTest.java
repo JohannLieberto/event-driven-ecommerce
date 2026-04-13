@@ -53,6 +53,7 @@ class InventoryClientCircuitBreakerTest {
         when(restTemplate.getForObject(anyString(), eq(InventoryClient.StockCheckResponse.class)))
                 .thenThrow(new RuntimeException("Service down"));
 
+        // Drive enough failures to open the circuit (slidingWindowSize=10, minimumCalls=5, threshold=50%)
         for (int i = 0; i < 10; i++) {
             inventoryClient.checkStock(1L, 1);
         }

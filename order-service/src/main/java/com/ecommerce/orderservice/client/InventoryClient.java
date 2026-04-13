@@ -24,6 +24,10 @@ public class InventoryClient implements InventoryClientPort {
         return inventoryServiceUrl + "/api/inventory";
     }
 
+    /**
+     * Check if product has sufficient stock.
+     * Protected by inventoryCheckCircuitBreaker — falls back gracefully if inventory-service is down.
+     */
     @Override
     @CircuitBreaker(name = "inventoryCheckCircuitBreaker", fallbackMethod = "checkStockFallback")
     public boolean checkStock(Long productId, int quantity) {
@@ -38,10 +42,17 @@ public class InventoryClient implements InventoryClientPort {
         }
     }
 
+    /**
+     * Fallback when inventoryCheckCircuitBreaker is open.
+     */
     public boolean checkStockFallback(Long productId, int quantity, Throwable ex) {
         return false;
     }
 
+    /**
+     * Reserve stock for an order.
+     * Protected by inventoryReserveCircuitBreaker — falls back by throwing a meaningful error.
+     */
     @Override
     @CircuitBreaker(name = "inventoryReserveCircuitBreaker", fallbackMethod = "reserveStockFallback")
     public void reserveStock(Long productId, int quantity, Long orderId) {
@@ -58,10 +69,15 @@ public class InventoryClient implements InventoryClientPort {
         }
     }
 
+    /**
+     * Fallback when inventoryReserveCircuitBreaker is open.
+     */
     public void reserveStockFallback(Long productId, int quantity, Long orderId, Throwable ex) {
         throw new InventoryServiceException(
                 "Inventory service is temporarily unavailable. Please try again later. Product: " + productId, ex);
     }
+
+    // ---- Inner DTOs ----
 
     public static class StockCheckResponse {
         private Long productId;

@@ -72,6 +72,7 @@ class OrderControllerIntegrationTest {
 
     @Test
     void getOrder_ExistingId_Returns200() throws Exception {
+        // First create an order to get a valid ID
         String requestJson = """
         {
             "customerId": 2002,
