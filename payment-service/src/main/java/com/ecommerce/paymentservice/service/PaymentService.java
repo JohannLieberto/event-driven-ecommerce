@@ -17,6 +17,18 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher paymentEventPublisher;
 
+    /**
+     * Called by PaymentController via REST for direct payment creation.
+     */
+    public Payment createPayment(Payment payment) {
+        payment.setStatus("PAYMENT_SUCCESS");
+        return paymentRepository.save(payment);
+    }
+
+    /**
+     * Called by Kafka listener for event-driven payment processing.
+     * Idempotent: skips if already processed.
+     */
     public void processPayment(OrderCreatedEvent event) {
         if (!"PENDING".equals(event.getStatus())) {
             log.info("Skipping non-PENDING order {}", event.getOrderId());
@@ -29,6 +41,7 @@ public class PaymentService {
                 Payment payment = new Payment();
                 payment.setOrderId(event.getOrderId());
                 payment.setCustomerId(event.getCustomerId());
+                payment.setAmount(event.getAmount());
                 payment.setStatus("PAYMENT_SUCCESS");
 
                 paymentRepository.save(payment);

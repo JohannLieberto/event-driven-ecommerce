@@ -2,6 +2,7 @@ package com.ecommerce.paymentservice.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "payments")
@@ -17,6 +18,12 @@ public class Payment {
 
     @Column(nullable = false)
     private Long customerId;
+
+    @Column
+    private BigDecimal amount;
+
+    @Column
+    private String transactionId;
 
     @Column(nullable = false)
     private String status;
