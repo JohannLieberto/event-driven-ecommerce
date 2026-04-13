@@ -1,33 +1,33 @@
 package com.ecommerce.orderservice.client;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
 import com.ecommerce.orderservice.exception.InsufficientStockException;
 import com.ecommerce.orderservice.exception.InventoryServiceException;
-
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-
-import java.util.Map;
+import org.springframework.web.client.RestTemplate;
 
 @Component
-public class InventoryClient {
+public class InventoryClient implements InventoryClientPort {
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
+    private final String inventoryServiceUrl;
 
-    private static final String INVENTORY_SERVICE_URL = "http://inventory-service/api/inventory";
+    public InventoryClient(RestTemplate restTemplate,
+                           @Value("${inventory.service.url}") String inventoryServiceUrl) {
+        this.restTemplate = restTemplate;
+        this.inventoryServiceUrl = inventoryServiceUrl;
+    }
 
-    /**
-     * Check if product has sufficient stock.
-     * Protected by inventoryCheckCircuitBreaker — falls back gracefully if inventory-service is down.
-     */
+    private String apiBase() {
+        return inventoryServiceUrl + "/api/inventory";
+    }
+
+    @Override
     @CircuitBreaker(name = "inventoryCheckCircuitBreaker", fallbackMethod = "checkStockFallback")
     public boolean checkStock(Long productId, int quantity) {
-        String url = INVENTORY_SERVICE_URL + "/" + productId + "/check?quantity=" + quantity;
+        String url = apiBase() + "/" + productId + "/check?quantity=" + quantity;
         try {
             StockCheckResponse response = restTemplate.getForObject(url, StockCheckResponse.class);
             return response != null && response.isSufficient();
@@ -38,21 +38,14 @@ public class InventoryClient {
         }
     }
 
-    /**
-     * Fallback when inventoryCheckCircuitBreaker is open.
-     * Returns false so order placement is rejected safely rather than overselling.
-     */
     public boolean checkStockFallback(Long productId, int quantity, Throwable ex) {
         return false;
     }
 
-    /**
-     * Reserve stock for an order.
-     * Protected by inventoryReserveCircuitBreaker — falls back by throwing a meaningful error.
-     */
+    @Override
     @CircuitBreaker(name = "inventoryReserveCircuitBreaker", fallbackMethod = "reserveStockFallback")
     public void reserveStock(Long productId, int quantity, Long orderId) {
-        String url = INVENTORY_SERVICE_URL + "/" + productId + "/reserve";
+        String url = apiBase() + "/" + productId + "/reserve";
         StockReservationRequest request = new StockReservationRequest();
         request.setQuantity(quantity);
         request.setOrderId(orderId);
@@ -65,15 +58,10 @@ public class InventoryClient {
         }
     }
 
-    /**
-     * Fallback when inventoryReserveCircuitBreaker is open.
-     */
     public void reserveStockFallback(Long productId, int quantity, Long orderId, Throwable ex) {
         throw new InventoryServiceException(
                 "Inventory service is temporarily unavailable. Please try again later. Product: " + productId, ex);
     }
-
-    // ---- Inner DTOs ----
 
     public static class StockCheckResponse {
         private Long productId;
