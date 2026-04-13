@@ -61,8 +61,8 @@ public class OrderService {
         order.setItems(items);
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderCreatedEvent.OrderItemEvent> itemEvents = savedOrder.getItems().stream()
-            .map(item -> new OrderCreatedEvent.OrderItemEvent(item.getProductId(), item.getQuantity()))
+        List<OrderItemEvent> itemEvents = savedOrder.getItems().stream()
+            .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity()))
             .collect(Collectors.toList());
 
         OrderCreatedEvent event = new OrderCreatedEvent(
