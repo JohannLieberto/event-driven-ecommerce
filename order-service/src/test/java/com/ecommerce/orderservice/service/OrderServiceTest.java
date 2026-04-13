@@ -1,6 +1,6 @@
 package com.ecommerce.orderservice.service;
 
-import com.ecommerce.orderservice.client.InventoryClient;
+import com.ecommerce.orderservice.client.InventoryClientPort;
 import com.ecommerce.orderservice.dto.OrderItemRequest;
 import com.ecommerce.orderservice.dto.OrderRequest;
 import com.ecommerce.orderservice.dto.OrderResponse;
@@ -9,7 +9,6 @@ import com.ecommerce.orderservice.entity.OrderItem;
 import com.ecommerce.orderservice.exception.InsufficientStockException;
 import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.ecommerce.orderservice.repository.OrderRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +30,7 @@ class OrderServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private InventoryClient inventoryClient;
+    private InventoryClientPort inventoryClient;
 
     @Mock
     private OrderEventPublisher orderEventPublisher;

@@ -1,19 +1,16 @@
 package com.ecommerce.orderservice.controller;
 
-import com.ecommerce.orderservice.client.InventoryClient;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.ecommerce.orderservice.client.InventoryClientPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -22,27 +19,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-    "eureka.client.enabled=false",
-    "eureka.client.register-with-eureka=false",
-    "eureka.client.fetch-registry=false",
-    "spring.cloud.config.enabled=false",
-    "spring.cloud.config.import-check.enabled=false",
-    "spring.datasource.url=jdbc:h2:mem:integrationdb;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
-})
 class OrderControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
-    private InventoryClient inventoryClient;
+    private InventoryClientPort inventoryClient;
 
     @BeforeEach
     void setup() {
@@ -86,34 +72,32 @@ class OrderControllerIntegrationTest {
 
     @Test
     void getOrder_ExistingId_Returns200() throws Exception {
-        String createJson = """
+        // First create an order to get a valid ID
+        String requestJson = """
         {
-            "customerId": 1002,
+            "customerId": 2002,
             "items": [
-                { "productId": 102, "quantity": 1 }
+                { "productId": 202, "quantity": 1 }
             ]
         }
         """;
 
-        String responseBody = mockMvc.perform(post("/api/orders")
+        MvcResult result = mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(createJson))
+                        .content(requestJson))
                 .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn();
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonNode = mapper.readTree(responseBody);
-        Long orderId = jsonNode.get("id").asLong();
+        Long createdId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
 
-        mockMvc.perform(get("/api/orders/" + orderId))
+        mockMvc.perform(get("/api/orders/" + createdId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(orderId))
-                .andExpect(jsonPath("$.customerId").value(1002));
+                .andExpect(jsonPath("$.id").value(createdId));
     }
 
     @Test
     void getOrder_NonExistingId_Returns404() throws Exception {
-        mockMvc.perform(get("/api/orders/9999"))
+        mockMvc.perform(get("/api/orders/999999"))
                 .andExpect(status().isNotFound());
     }
 }

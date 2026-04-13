@@ -1,6 +1,6 @@
 package com.ecommerce.orderservice.service;
 
-import com.ecommerce.orderservice.client.InventoryClient;
+import com.ecommerce.orderservice.client.InventoryClientPort;
 import com.ecommerce.orderservice.dto.*;
 import com.ecommerce.orderservice.entity.Order;
 import com.ecommerce.orderservice.entity.OrderItem;
@@ -9,7 +9,6 @@ import com.ecommerce.orderservice.exception.InsufficientStockException;
 import com.ecommerce.orderservice.exception.OrderNotFoundException;
 import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.ecommerce.orderservice.repository.OrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,17 +20,19 @@ import java.util.stream.Collectors;
 @Transactional
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
+    private final InventoryClientPort inventoryClient;
+    private final OrderEventPublisher orderEventPublisher;
 
-    @Autowired
-    private InventoryClient inventoryClient;
-
-    @Autowired
-    private OrderEventPublisher orderEventPublisher;
+    public OrderService(OrderRepository orderRepository,
+                        InventoryClientPort inventoryClient,
+                        OrderEventPublisher orderEventPublisher) {
+        this.orderRepository = orderRepository;
+        this.inventoryClient = inventoryClient;
+        this.orderEventPublisher = orderEventPublisher;
+    }
 
     public OrderResponse createOrder(OrderRequest request) {
-        // STEP 1: Synchronous stock check (read-only, keeps fast feedback)
         for (OrderItemRequest itemRequest : request.getItems()) {
             boolean hasStock = inventoryClient.checkStock(
                 itemRequest.getProductId(),
@@ -44,7 +45,6 @@ public class OrderService {
             }
         }
 
-        // STEP 2: Create and persist order as PENDING
         Order order = new Order();
         order.setCustomerId(request.getCustomerId());
         order.setStatus("PENDING");
@@ -61,7 +61,6 @@ public class OrderService {
         order.setItems(items);
         Order savedOrder = orderRepository.save(order);
 
-        // STEP 3: Publish order.created event — downstream services handle the rest asynchronously
         List<OrderCreatedEvent.OrderItemEvent> itemEvents = savedOrder.getItems().stream()
             .map(item -> new OrderCreatedEvent.OrderItemEvent(item.getProductId(), item.getQuantity()))
             .collect(Collectors.toList());
@@ -75,7 +74,6 @@ public class OrderService {
         );
 
         orderEventPublisher.publishOrderCreated(event);
-
         return mapToResponse(savedOrder);
     }
 
@@ -88,8 +86,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByCustomerId(Long customerId) {
-        List<Order> orders = orderRepository.findByCustomerId(customerId);
-        return orders.stream()
+        return orderRepository.findByCustomerId(customerId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toCollection(ArrayList::new));
     }
@@ -98,8 +95,7 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + id));
         order.setStatus(status);
-        Order updated = orderRepository.save(order);
-        return mapToResponse(updated);
+        return mapToResponse(orderRepository.save(order));
     }
 
     private OrderResponse mapToResponse(Order order) {
