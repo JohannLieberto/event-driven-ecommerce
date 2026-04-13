@@ -1,27 +1,23 @@
 package com.ecommerce.paymentservice.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
 
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "payments")
+@Data
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long orderId;
 
-    private Long customerId;   // ✅ REQUIRED
+    @Column(nullable = false)
+    private Long customerId;
 
-    private Double amount;
-
+    @Column(nullable = false)
     private String status;
-
-    private String transactionId; // ✅ REQUIRED
 }

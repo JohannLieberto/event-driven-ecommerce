@@ -1,38 +1,24 @@
 package com.ecommerce.paymentservice.kafka;
 
 import com.ecommerce.paymentservice.event.PaymentCompletedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.CompletableFuture;
-
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class PaymentEventPublisher {
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentEventPublisher.class);
-    private static final String TOPIC = "payment.completed";
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Autowired
-    private KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
+    @Value("${kafka.topics.payment-completed:payment-completed}")
+    private String paymentCompletedTopic;
 
     public void publishPaymentCompleted(PaymentCompletedEvent event) {
-        CompletableFuture<SendResult<String, PaymentCompletedEvent>> future =
-            kafkaTemplate.send(TOPIC, String.valueOf(event.getOrderId()), event);
-
-        future.whenComplete((result, ex) -> {
-            if (ex != null) {
-                log.error("[PAYMENT-SERVICE] Failed to publish payment.completed for orderId={}: {}",
-                    event.getOrderId(), ex.getMessage());
-            } else {
-                log.info("[PAYMENT-SERVICE] Published payment.completed for orderId={} partition={} offset={}",
-                    event.getOrderId(),
-                    result.getRecordMetadata().partition(),
-                    result.getRecordMetadata().offset());
-            }
-        });
+        log.info("Publishing PaymentCompletedEvent for orderId={}", event.getOrderId());
+        kafkaTemplate.send(paymentCompletedTopic, String.valueOf(event.getOrderId()), event);
     }
 }

@@ -1,42 +1,17 @@
 package com.ecommerce.paymentservice.event;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import lombok.Data;
 
-import java.time.LocalDateTime;
-
+@Data
 public class PaymentCompletedEvent {
 
     private Long orderId;
     private Long customerId;
-    private String status; // PAYMENT_SUCCESS or PAYMENT_FAILED
-    private String transactionId;
-    private LocalDateTime processedAt;
+    private String status;
 
-    public PaymentCompletedEvent() {}
-
-    public PaymentCompletedEvent(Long orderId, Long customerId, String status,
-                                  String transactionId, LocalDateTime processedAt) {
+    public PaymentCompletedEvent(Long orderId, Long customerId, String status) {
         this.orderId = orderId;
         this.customerId = customerId;
         this.status = status;
-        this.transactionId = transactionId;
-        this.processedAt = processedAt;
     }
-
-    public Long getOrderId() { return orderId; }
-    public void setOrderId(Long orderId) { this.orderId = orderId; }
-
-    public Long getCustomerId() { return customerId; }
-    public void setCustomerId(Long customerId) { this.customerId = customerId; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public String getTransactionId() { return transactionId; }
-    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
-
-    public LocalDateTime getProcessedAt() { return processedAt; }
-    public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
-
 }

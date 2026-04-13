@@ -6,43 +6,37 @@ import com.ecommerce.paymentservice.event.PaymentCompletedEvent;
 import com.ecommerce.paymentservice.kafka.PaymentEventPublisher;
 import com.ecommerce.paymentservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
-    private final PaymentRepository repository;
+    private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher paymentEventPublisher;
 
-    public Payment createPayment(Payment payment) {
-        payment.setStatus("PAYMENT_SUCCESS"); // ✅ standardized
-        return repository.save(payment);
-    }
-
     public void processPayment(OrderCreatedEvent event) {
-
-        // ✅ Idempotency check
-        if (repository.findByOrderId(event.getOrderId()).isPresent()) {
+        if (!"PENDING".equals(event.getStatus())) {
+            log.info("Skipping non-PENDING order {}", event.getOrderId());
             return;
         }
 
-        // ✅ Create payment
-        Payment payment = new Payment();
-        payment.setOrderId(event.getOrderId());
-        payment.setCustomerId(event.getCustomerId());
-        payment.setAmount(event.getAmount());
-        payment.setStatus("PAYMENT_SUCCESS");
+        paymentRepository.findByOrderId(event.getOrderId()).ifPresentOrElse(
+            existing -> log.info("Payment already processed for orderId={}, skipping", event.getOrderId()),
+            () -> {
+                Payment payment = new Payment();
+                payment.setOrderId(event.getOrderId());
+                payment.setCustomerId(event.getCustomerId());
+                payment.setStatus("PAYMENT_SUCCESS");
 
-        // ✅ Save to DB
-        repository.save(payment);
+                paymentRepository.save(payment);
 
-        // ✅ Publish event
-        PaymentCompletedEvent completedEvent = new PaymentCompletedEvent();
-        completedEvent.setOrderId(payment.getOrderId());
-        completedEvent.setCustomerId(payment.getCustomerId());
-        completedEvent.setStatus(payment.getStatus());
-
-        paymentEventPublisher.publishPaymentCompleted(completedEvent);
+                paymentEventPublisher.publishPaymentCompleted(
+                    new PaymentCompletedEvent(event.getOrderId(), event.getCustomerId(), "PAYMENT_SUCCESS")
+                );
+            }
+        );
     }
 }
