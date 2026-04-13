@@ -5,10 +5,10 @@ import com.ecommerce.inventoryservice.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,15 +31,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class InventoryControllerIntegrationTest {
 
+    @TestConfiguration
+    static class KafkaStubConfig {
+        @Bean
+        @SuppressWarnings("unchecked")
+        public KafkaTemplate<String, Object> kafkaTemplate() {
+            return mock(KafkaTemplate.class);
+        }
+    }
+
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private ProductRepository productRepository;
-
-    // ✅ MOCK KAFKA (prevents context failure)
-    @MockBean
-    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @BeforeEach
     void setup() {
@@ -95,8 +101,8 @@ class InventoryControllerIntegrationTest {
 
         mockMvc.perform(get("/api/inventory?page=0&size=10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())           // ✅ FIXED
-                .andExpect(jsonPath("$.length()").value(15)); // ✅ FIXED
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(15));
     }
 
     @Test
