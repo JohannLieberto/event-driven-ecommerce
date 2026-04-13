@@ -1,7 +1,6 @@
 package com.ecommerce.shippingservice.config;
 
 import com.ecommerce.shippingservice.event.PaymentCompletedEvent;
-import com.ecommerce.shippingservice.event.ShipmentScheduledEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -46,7 +45,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ProducerFactory<String, ShipmentScheduledEvent> shippingProducerFactory() {
+    public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -58,7 +57,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, ShipmentScheduledEvent> kafkaTemplate() {
-        return new KafkaTemplate<>(shippingProducerFactory());
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
     }
 }
