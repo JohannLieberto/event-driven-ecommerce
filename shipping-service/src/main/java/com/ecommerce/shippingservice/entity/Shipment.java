@@ -15,6 +15,9 @@ public class Shipment {
     @Column(nullable = false)
     private Long orderId;
 
+    @Column
+    private Long customerId;
+
     @Column(nullable = false)
     private String status;
 
