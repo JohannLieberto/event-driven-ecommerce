@@ -10,10 +10,15 @@ spring:
       ddl-auto: create-drop
     show-sql: false
     database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
 
   h2:
     console:
       enabled: true
+
+  sql:
+    init:
+      mode: always
 
   kafka:
     bootstrap-servers: localhost:9999
@@ -34,6 +39,3 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-
-# Disable security for tests
-spring.security.user.password: test
