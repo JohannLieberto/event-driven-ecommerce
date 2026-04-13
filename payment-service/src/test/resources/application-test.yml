@@ -16,6 +16,7 @@ spring:
       enabled: true
 
   kafka:
+    bootstrap-servers: localhost:9999
     listener:
       auto-startup: false
 
