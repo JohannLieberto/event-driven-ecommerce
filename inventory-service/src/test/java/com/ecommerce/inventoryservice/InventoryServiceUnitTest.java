@@ -29,7 +29,6 @@ class InventoryServiceUnitTest {
         productRepository = mock(ProductRepository.class);
         stockChangeLogRepository = mock(StockChangeLogRepository.class);
 
-        // ✅ FIXED: no KafkaTemplate
         inventoryService = new InventoryService(
                 productRepository,
                 stockChangeLogRepository
@@ -58,13 +57,8 @@ class InventoryServiceUnitTest {
 
         inventoryService.handleOrderCreated(event);
 
-        // ✅ stock reduced
         assertEquals(7, product.getStockQuantity());
-
-        // ✅ DB save called
         verify(productRepository).save(any(Product.class));
-
-        // ✅ stock log created
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));
     }
 
@@ -120,9 +114,7 @@ class InventoryServiceUnitTest {
 
         inventoryService.handlePaymentFailed(event);
 
-        // ✅ stock restored
         assertEquals(10, product.getStockQuantity());
-
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));
     }
 }
