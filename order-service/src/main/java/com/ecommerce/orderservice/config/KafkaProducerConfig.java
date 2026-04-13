@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")

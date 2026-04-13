@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,11 +23,11 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final InventoryClientPort inventoryClient;
-    private final OrderEventPublisher orderEventPublisher;
+    private final Optional<OrderEventPublisher> orderEventPublisher;
 
     public OrderService(OrderRepository orderRepository,
                         InventoryClientPort inventoryClient,
-                        OrderEventPublisher orderEventPublisher) {
+                        Optional<OrderEventPublisher> orderEventPublisher) {
         this.orderRepository = orderRepository;
         this.inventoryClient = inventoryClient;
         this.orderEventPublisher = orderEventPublisher;
@@ -73,7 +74,7 @@ public class OrderService {
             savedOrder.getCreatedAt()
         );
 
-        orderEventPublisher.publishOrderCreated(event);
+        orderEventPublisher.ifPresent(publisher -> publisher.publishOrderCreated(event));
         return mapToResponse(savedOrder);
     }
 
