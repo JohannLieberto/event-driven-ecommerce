@@ -64,6 +64,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- 🧪 H2 IN-MEMORY DATABASE (TEST ONLY) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- 🧪 KAFKA TEST (optional but useful) -->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
