@@ -1,6 +1,7 @@
 package com.ecommerce.orderservice.controller;
 
 import com.ecommerce.orderservice.client.InventoryClientPort;
+import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,8 @@ class OrderControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private OrderEventPublisher orderEventPublisher;
     @Autowired
     private ObjectMapper objectMapper;
 
