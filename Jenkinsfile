@@ -110,42 +110,48 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Starting persistent infra (Kafka, Zookeeper, Postgres) ==='
-                sh 'docker compose up -d zookeeper kafka kafka-ui postgres'
+                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
+                sh 'docker compose -f docker-compose.yml up -d --build'
 
-                echo '=== Waiting for Kafka container to be healthy ==='
+                echo '=== Waiting for infrastructure to pass healthchecks ==='
+                sh 'docker compose -f docker-compose.yml wait --timeout 180 zookeeper kafka postgres eureka-server'
+
+                echo '=== Waiting for microservices to be healthy ==='
                 sh '''
-                    RETRIES=36
-                    COUNT=0
-                    until [ "$(docker inspect --format='{{.State.Health.Status}}' kafka)" = "healthy" ]; do
-                        COUNT=$((COUNT + 1))
-                        if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Kafka did not become healthy after 180 seconds. Aborting."
-                            docker compose logs kafka
+                    SERVICES="order-service inventory-service payment-service shipping-service notification-service api-gateway"
+                    for SERVICE in $SERVICES; do
+                        echo "Waiting for $SERVICE..."
+                        COUNT=0
+                        until [ $(docker inspect --format="{{.State.Health.Status}}" $SERVICE 2>/dev/null) = "healthy" ] || [ $COUNT -ge 36 ]; do
+                            echo "$SERVICE not ready yet... attempt $COUNT/36. Retrying in 5s."
+                            sleep 5
+                            COUNT=$((COUNT + 1))
+                        done
+                        if [ $COUNT -ge 36 ]; then
+                            echo "ERROR: $SERVICE did not become healthy in time."
                             exit 1
                         fi
-                        echo "Kafka not healthy yet... attempt $COUNT/$RETRIES. Retrying in 5s."
-                        sleep 5
+                        echo "$SERVICE is healthy."
                     done
-                    echo "Kafka is healthy after $((COUNT * 5))s."
                 '''
-
-                echo '=== Building and starting application services ==='
-                sh 'docker compose up -d --build eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service'
-
-                echo '=== Waiting for all Spring services to register with Eureka ==='
-                sh 'sleep 90'
             }
         }
 
         stage('Karate API Tests') {
             steps {
                 echo '=== Running Karate API and E2E tests ==='
-                sh 'mvn verify -pl karate-tests -Dskip.karate=false -Dkarate.env=ci'
+                sh '''
+                    docker run --rm \
+                        --network ecommerce-network \
+                        -v $(pwd)/karate-tests:/app \
+                        -w /app \
+                        maven:3.9-eclipse-temurin-21 \
+                        mvn verify -Dkarate.env=ci
+                '''
             }
             post {
                 always {
-                    junit 'karate-tests/target/failsafe-reports/*.xml'
+                    junit 'karate-tests/target/surefire-reports/*.xml'
                     publishHTML(target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -160,8 +166,8 @@ pipeline {
 
         stage('Stop Infrastructure') {
             steps {
-                echo '=== Tearing down app services (keeping infra volumes) ==='
-                sh 'docker compose down'
+                echo '=== Tearing down Docker Compose ==='
+                sh 'docker compose -f docker-compose.yml down -v'
             }
         }
 
@@ -220,7 +226,7 @@ pipeline {
         }
         failure {
             echo '=== Pipeline FAILED - check logs above ==='
-            sh 'docker compose logs --tail=50 || true'
+            sh 'docker compose -f docker-compose.yml logs --tail=50 || true'
         }
         always {
             cleanWs()
