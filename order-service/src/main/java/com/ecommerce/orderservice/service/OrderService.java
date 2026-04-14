@@ -11,10 +11,10 @@ import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.ecommerce.orderservice.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ecommerce.orderservice.dto.OrderItemEvent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,19 +23,11 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final InventoryClientPort inventoryClient;
-<<<<<<< HEAD
     private final OrderEventPublisher orderEventPublisher;
 
     public OrderService(OrderRepository orderRepository,
                         InventoryClientPort inventoryClient,
                         OrderEventPublisher orderEventPublisher) {
-=======
-    private final Optional<OrderEventPublisher> orderEventPublisher;
-
-    public OrderService(OrderRepository orderRepository,
-                        InventoryClientPort inventoryClient,
-                        Optional<OrderEventPublisher> orderEventPublisher) {
->>>>>>> develop
         this.orderRepository = orderRepository;
         this.inventoryClient = inventoryClient;
         this.orderEventPublisher = orderEventPublisher;
@@ -70,14 +62,9 @@ public class OrderService {
         order.setItems(items);
         Order savedOrder = orderRepository.save(order);
 
-<<<<<<< HEAD
-        List<OrderCreatedEvent.OrderItemEvent> itemEvents = savedOrder.getItems().stream()
-            .map(item -> new OrderCreatedEvent.OrderItemEvent(item.getProductId(), item.getQuantity()))
-=======
         List<OrderItemEvent> itemEvents = savedOrder.getItems().stream()
-            .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity()))
->>>>>>> develop
-            .collect(Collectors.toList());
+    .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity()))
+    .collect(Collectors.toList());
 
         OrderCreatedEvent event = new OrderCreatedEvent(
             savedOrder.getId(),
@@ -87,11 +74,7 @@ public class OrderService {
             savedOrder.getCreatedAt()
         );
 
-<<<<<<< HEAD
         orderEventPublisher.publishOrderCreated(event);
-=======
-        orderEventPublisher.ifPresent(publisher -> publisher.publishOrderCreated(event));
->>>>>>> develop
         return mapToResponse(savedOrder);
     }
 
