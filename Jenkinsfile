@@ -141,11 +141,11 @@ pipeline {
         stage('Karate API Tests') {
             steps {
                 echo '=== Running Karate API and E2E tests ==='
-                sh 'mvn test -pl karate-tests -Dkarate.env=ci'
+                sh 'mvn verify -pl karate-tests -Dskip.karate=false -Dkarate.env=ci'
             }
             post {
                 always {
-                    junit 'karate-tests/target/surefire-reports/*.xml'
+                    junit 'karate-tests/target/failsafe-reports/*.xml'
                     publishHTML(target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
