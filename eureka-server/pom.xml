@@ -14,6 +14,11 @@
 
     <artifactId>eureka-server</artifactId>
 
+    <!-- ✅ Force Java version locally (override parent if needed) -->
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
     <dependencies>
 
         <!-- Eureka Server -->
@@ -39,6 +44,16 @@
 
     <build>
         <plugins>
+
+            <!-- ✅ Compiler plugin (IMPORTANT FIX) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
 
             <!-- Spring Boot Plugin -->
             <plugin>
