@@ -2,7 +2,16 @@
 # In order-service/src/main/resources/application.yml, add:
 spring:
   config:
-    import: optional:configserver:http://localhost:8888
+    import:
+      optional:configserver:
+
+  logging:
+    level:
+      com.ecommerce: DEBUG
+      io.github.resilience4j: INFO
+      #enabled: false
+  #config:
+   # import: optional:configserver:http://localhost:8888
 logging:
   level:
     com.ecommerce: DEBUG

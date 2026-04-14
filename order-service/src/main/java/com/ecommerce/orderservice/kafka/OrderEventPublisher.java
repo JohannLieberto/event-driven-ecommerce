@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-@ConditionalOnBean(KafkaTemplate.class)
 public class OrderEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(OrderEventPublisher.class);
