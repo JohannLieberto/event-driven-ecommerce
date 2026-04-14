@@ -111,7 +111,7 @@ pipeline {
         stage('Start Infrastructure') {
             steps {
                 echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
-                sh 'docker-compose up -d --build'
+                sh 'docker compose up -d --build'
 
                 echo '=== Waiting for Kafka to become fully healthy ==='
                 sh '''
