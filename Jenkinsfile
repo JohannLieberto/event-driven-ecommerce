@@ -134,7 +134,7 @@ pipeline {
                 sh 'docker compose up -d --build eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service'
 
                 echo '=== Waiting for all Spring services to register with Eureka ==='
-                sh 'sleep 45'
+                sh 'sleep 90'
             }
         }
 

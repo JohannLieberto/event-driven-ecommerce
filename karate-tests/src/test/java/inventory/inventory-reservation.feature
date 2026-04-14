@@ -1,7 +1,7 @@
 Feature: Inventory reservation
 
   Background:
-    * url baseUrl
+    * url inventoryServiceUrl
     * def productId = 4
 
   Scenario: create order with enough stock and verify inventory shows reduced available stock
