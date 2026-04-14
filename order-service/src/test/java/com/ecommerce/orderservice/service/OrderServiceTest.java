@@ -35,7 +35,6 @@ class OrderServiceTest {
     @Mock
     private OrderEventPublisher orderEventPublisher;
 
-    // Manually constructed so Optional<OrderEventPublisher> is properly populated
     private OrderService orderService;
 
     @BeforeEach
@@ -43,7 +42,7 @@ class OrderServiceTest {
         orderService = new OrderService(
                 orderRepository,
                 inventoryClient,
-                Optional.of(orderEventPublisher)
+                orderEventPublisher
         );
     }
 
