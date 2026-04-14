@@ -32,6 +32,12 @@ pipeline {
                     post {
                         always {
                             junit 'order-service/target/surefire-reports/*.xml'
+                            jacoco(
+                                execPattern: 'order-service/target/jacoco.exec',
+                                classPattern: 'order-service/target/classes',
+                                sourcePattern: 'order-service/src/main/java',
+                                exclusionPattern: '**/dto/**,**/entity/**,**/model/**,**/*Application.class'
+                            )
                         }
                     }
                 }
@@ -42,6 +48,12 @@ pipeline {
                     post {
                         always {
                             junit 'inventory-service/target/surefire-reports/*.xml'
+                            jacoco(
+                                execPattern: 'inventory-service/target/jacoco.exec',
+                                classPattern: 'inventory-service/target/classes',
+                                sourcePattern: 'inventory-service/src/main/java',
+                                exclusionPattern: '**/dto/**,**/entity/**,**/model/**,**/*Application.class'
+                            )
                         }
                     }
                 }
@@ -52,6 +64,12 @@ pipeline {
                     post {
                         always {
                             junit 'payment-service/target/surefire-reports/*.xml'
+                            jacoco(
+                                execPattern: 'payment-service/target/jacoco.exec',
+                                classPattern: 'payment-service/target/classes',
+                                sourcePattern: 'payment-service/src/main/java',
+                                exclusionPattern: '**/dto/**,**/entity/**,**/model/**,**/*Application.class'
+                            )
                         }
                     }
                 }
@@ -62,6 +80,12 @@ pipeline {
                     post {
                         always {
                             junit 'shipping-service/target/surefire-reports/*.xml'
+                            jacoco(
+                                execPattern: 'shipping-service/target/jacoco.exec',
+                                classPattern: 'shipping-service/target/classes',
+                                sourcePattern: 'shipping-service/src/main/java',
+                                exclusionPattern: '**/dto/**,**/entity/**,**/model/**,**/*Application.class'
+                            )
                         }
                     }
                 }
@@ -72,6 +96,12 @@ pipeline {
                     post {
                         always {
                             junit 'notification-service/target/surefire-reports/*.xml'
+                            jacoco(
+                                execPattern: 'notification-service/target/jacoco.exec',
+                                classPattern: 'notification-service/target/classes',
+                                sourcePattern: 'notification-service/src/main/java',
+                                exclusionPattern: '**/dto/**,**/entity/**,**/model/**,**/*Application.class'
+                            )
                         }
                     }
                 }
@@ -84,7 +114,6 @@ pipeline {
                 sh 'docker-compose up -d --build'
 
                 echo '=== Waiting for Kafka to become fully healthy ==='
-                // Poll Kafka readiness: retry every 5s for up to 120s total
                 sh '''
                     RETRIES=24
                     COUNT=0
@@ -140,16 +169,23 @@ pipeline {
             steps {
                 echo '=== Building and pushing Docker images to DockerHub (HiteshKhade) ==='
                 script {
-                    def services = [
-                        'eureka-server', 'api-gateway', 'order-service',
-                        'inventory-service', 'payment-service',
-                        'shipping-service', 'notification-service'
-                    ]
-                    services.each { svc ->
-                        sh "docker build -t ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ./${svc}"
-                        sh "docker tag ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ${DOCKER_REGISTRY}/${svc}:latest"
-                        sh "docker push ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER}"
-                        sh "docker push ${DOCKER_REGISTRY}/${svc}:latest"
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                        def services = [
+                            'eureka-server', 'api-gateway', 'order-service',
+                            'inventory-service', 'payment-service',
+                            'shipping-service', 'notification-service'
+                        ]
+                        services.each { svc ->
+                            sh "docker build -t ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ./${svc}"
+                            sh "docker tag ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER} ${DOCKER_REGISTRY}/${svc}:latest"
+                            sh "docker push ${DOCKER_REGISTRY}/${svc}:${BUILD_NUMBER}"
+                            sh "docker push ${DOCKER_REGISTRY}/${svc}:latest"
+                        }
                     }
                 }
             }
