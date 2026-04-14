@@ -115,12 +115,12 @@ pipeline {
 
                 echo '=== Waiting for Kafka to become fully healthy ==='
                 sh '''
-                    RETRIES=24
+                    RETRIES=36
                     COUNT=0
-                    until docker exec kafka kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+                    until docker exec kafka kafka-topics.sh --bootstrap-server localhost:29092 --list > /dev/null 2>&1; do
                         COUNT=$((COUNT + 1))
                         if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Kafka did not become ready after 120 seconds. Aborting."
+                            echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
                             docker compose logs kafka
                             exit 1
                         fi
