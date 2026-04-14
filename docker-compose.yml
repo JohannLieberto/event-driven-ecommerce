@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -80,21 +78,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
-  jenkins:
-    build:
-      context: ./jenkins
-      dockerfile: Dockerfile
-    container_name: jenkins
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
 
   eureka-server:
     build:
@@ -235,7 +218,6 @@ services:
 
 volumes:
   postgres-data:
-  jenkins-data:
 
 networks:
   ecommerce-network:
