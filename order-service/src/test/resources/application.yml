@@ -25,17 +25,6 @@ spring:
     enabled: false
     bootstrap-servers: localhost:9092
 
-<<<<<<< HEAD
-logging:
-  level:
-    com.ecommerce.orderservice: INFO
-
-eureka:
-  client:
-    enabled: false
-    register-with-eureka: false
-    fetch-registry: false
-=======
 eureka:
   client:
     enabled: false
@@ -49,4 +38,3 @@ inventory:
 logging:
   level:
     com.ecommerce.orderservice: INFO
->>>>>>> develop

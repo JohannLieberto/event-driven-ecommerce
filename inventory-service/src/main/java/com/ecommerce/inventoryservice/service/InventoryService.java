@@ -101,7 +101,6 @@ public class InventoryService {
         int before = product.getStockQuantity();
 
         try {
-            // ✅ FIX: reduce stock
             product.setStockQuantity(before - request.getQuantity());
 
             Product updated = productRepository.save(product);
@@ -155,16 +154,11 @@ public class InventoryService {
     // ===================== EVENT HANDLERS =====================
 
     public void handleOrderCreated(OrderCreatedEvent event) {
-<<<<<<< HEAD
         log.info("[INVENTORY-SERVICE] Handling order.created for orderId={}", event.getOrderId());
         if (event.getItems() == null || event.getItems().isEmpty()) {
             log.warn("[INVENTORY-SERVICE] No items in order.created event for orderId={}", event.getOrderId());
             return;
         }
-=======
-        log.info("📦 Handling order.created for orderId={}", event.getOrderId());
-
->>>>>>> develop
         for (OrderItemEvent item : event.getItems()) {
             StockReservationRequest req = new StockReservationRequest();
             req.setQuantity(item.getQuantity());

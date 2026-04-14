@@ -34,8 +34,6 @@ eureka:
 inventory:
   service:
     url: http://localhost:8083
-<<<<<<< HEAD
-=======
 
 # Resilience4j Circuit Breaker configuration - test profile
 resilience4j:
@@ -59,4 +57,3 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
         slidingWindowType: COUNT_BASED
->>>>>>> develop
