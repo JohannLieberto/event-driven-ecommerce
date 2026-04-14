@@ -3,6 +3,7 @@ package com.ecommerce.inventoryservice.service;
 import com.ecommerce.inventoryservice.dto.*;
 import com.ecommerce.inventoryservice.entity.Product;
 import com.ecommerce.inventoryservice.entity.StockChangeLog;
+import com.ecommerce.inventoryservice.event.InventoryReservedEvent;
 import com.ecommerce.inventoryservice.exception.InsufficientStockException;
 import com.ecommerce.inventoryservice.exception.ProductNotFoundException;
 import com.ecommerce.inventoryservice.exception.StockConcurrencyException;
@@ -12,8 +13,6 @@ import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,28 +28,24 @@ public class InventoryService {
 
     private final ProductRepository productRepository;
     private final StockChangeLogRepository stockChangeLogRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public InventoryService(ProductRepository productRepository,
-                            StockChangeLogRepository stockChangeLogRepository,
-                            KafkaTemplate<String, Object> kafkaTemplate) {
+                            StockChangeLogRepository stockChangeLogRepository) {
         this.productRepository = productRepository;
         this.stockChangeLogRepository = stockChangeLogRepository;
-        this.kafkaTemplate = kafkaTemplate;
     }
 
-    // CREATE PRODUCT
+    // ===================== PRODUCT CRUD =====================
+
     public ProductResponse createProduct(ProductRequest request) {
         Product product = new Product();
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
-        Product saved = productRepository.save(product);
-        return mapToResponse(saved);
+        return mapToResponse(productRepository.save(product));
     }
 
-    // GET ALL PRODUCTS
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()
                 .stream()
@@ -58,52 +53,36 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
-    // GET PRODUCT
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
         return mapToResponse(product);
     }
 
-    // UPDATE PRODUCT
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStockQuantity(request.getStockQuantity());
-        Product updated = productRepository.save(product);
-        return mapToResponse(updated);
+
+        return mapToResponse(productRepository.save(product));
     }
 
-    // DELETE PRODUCT
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
         productRepository.delete(product);
     }
 
-    // ADD STOCK
-    public ProductResponse addStock(Long productId, StockReservationRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
-        int before = product.getStockQuantity();
-        product.setStockQuantity(before + request.getQuantity());
-        try {
-            Product updated = productRepository.save(product);
-            logStockChange(productId, "ADD", request.getQuantity(), before,
-                    updated.getStockQuantity(), request.getOrderId());
-            return mapToResponse(updated);
-        } catch (OptimisticLockException e) {
-            throw new StockConcurrencyException("Stock modified by another request");
-        }
-    }
+    // ===================== STOCK =====================
 
-    // CHECK STOCK
     public StockCheckResponse checkStock(Long productId, Integer requestedQuantity) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
         StockCheckResponse response = new StockCheckResponse();
         response.setProductId(productId);
         response.setAvailableStock(product.getStockQuantity());
@@ -111,89 +90,176 @@ public class InventoryService {
         return response;
     }
 
-    // RESERVE STOCK
     public ProductResponse reserveStock(Long productId, StockReservationRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
         if (product.getStockQuantity() < request.getQuantity()) {
             throw new InsufficientStockException("Insufficient stock");
         }
+
         int before = product.getStockQuantity();
-        product.setStockQuantity(before - request.getQuantity());
+
         try {
+            // ✅ FIX: reduce stock
+            product.setStockQuantity(before - request.getQuantity());
+
             Product updated = productRepository.save(product);
-            logStockChange(productId, "RESERVE", request.getQuantity(), before,
+
+            logStockChange(productId, "RESERVE",
+                    request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
+
+            log.info("✅ Stock reserved for orderId={}", request.getOrderId());
+
             return mapToResponse(updated);
+
         } catch (OptimisticLockException e) {
             throw new StockConcurrencyException("Stock modified by another request");
         }
     }
 
-    // RELEASE STOCK
     public ProductResponse releaseStock(Long productId, StockReservationRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
         int before = product.getStockQuantity();
+
         product.setStockQuantity(before + request.getQuantity());
-        try {
-            Product updated = productRepository.save(product);
-            logStockChange(productId, "RELEASE", request.getQuantity(), before,
-                    updated.getStockQuantity(), request.getOrderId());
-            return mapToResponse(updated);
-        } catch (OptimisticLockException e) {
-            throw new StockConcurrencyException("Stock modified by another request");
-        }
+
+        Product updated = productRepository.save(product);
+
+        logStockChange(productId, "RELEASE",
+                request.getQuantity(), before,
+                updated.getStockQuantity(), request.getOrderId());
+
+        return mapToResponse(updated);
     }
 
-    // HANDLE ORDER CREATED (consumed by InventoryKafkaListener via orders.order-created)
+    public ProductResponse addStock(Long productId, StockReservationRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
+        int before = product.getStockQuantity();
+        product.setStockQuantity(before + request.getQuantity());
+
+        Product updated = productRepository.save(product);
+
+        logStockChange(productId, "ADD",
+                request.getQuantity(), before,
+                updated.getStockQuantity(), request.getOrderId());
+
+        return mapToResponse(updated);
+    }
+
+    // ===================== EVENT HANDLERS =====================
+
     public void handleOrderCreated(OrderCreatedEvent event) {
+<<<<<<< HEAD
         log.info("[INVENTORY-SERVICE] Handling order.created for orderId={}", event.getOrderId());
         if (event.getItems() == null || event.getItems().isEmpty()) {
             log.warn("[INVENTORY-SERVICE] No items in order.created event for orderId={}", event.getOrderId());
             return;
         }
+=======
+        log.info("📦 Handling order.created for orderId={}", event.getOrderId());
+
+>>>>>>> develop
         for (OrderItemEvent item : event.getItems()) {
             StockReservationRequest req = new StockReservationRequest();
             req.setQuantity(item.getQuantity());
             req.setOrderId(event.getOrderId());
+
             reserveStock(item.getProductId(), req);
         }
     }
 
-    // HANDLE PAYMENT PROCESSED (consumed by InventoryKafkaListener via payments.payment-processed)
     public void handlePaymentProcessed(PaymentProcessedEvent event) {
-        log.info("[INVENTORY-SERVICE] Handling payment.processed for orderId={} status={}",
-                event.getOrderId(), event.getStatus());
+        log.info("💰 Payment processed for orderId={}", event.getOrderId());
     }
 
-    // HANDLE PAYMENT FAILED — release reserved stock (consumed via payments.payment-failed)
     public void handlePaymentFailed(PaymentFailedEvent event) {
-        log.info("[INVENTORY-SERVICE] Handling payment.failed for orderId={}, releasing stock", event.getOrderId());
-        if (event.getItems() == null || event.getItems().isEmpty()) {
-            log.warn("[INVENTORY-SERVICE] No items in payment.failed event for orderId={}", event.getOrderId());
-            return;
-        }
+        log.info("❌ Payment failed, releasing stock for orderId={}", event.getOrderId());
+
         for (PaymentFailedEvent.OrderItem item : event.getItems()) {
             StockReservationRequest req = new StockReservationRequest();
             req.setQuantity(item.getQuantity());
             req.setOrderId(event.getOrderId());
+
             releaseStock(item.getProductId(), req);
         }
     }
 
-    // LOG STOCK CHANGE
+    // ===================== BULK =====================
+
+    public BulkUpdateResponse bulkUpdateStock(BulkUpdateRequest request) {
+
+        List<UpdateResult> results = new ArrayList<>();
+        int successCount = 0;
+        int failureCount = 0;
+
+        for (ProductStockUpdate update : request.getUpdates()) {
+            try {
+                Product product = productRepository.findById(update.getProductId())
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(PRODUCT_NOT_FOUND + ": " + update.getProductId()));
+
+                int before = product.getStockQuantity();
+                product.setStockQuantity(update.getNewQuantity());
+
+                productRepository.save(product);
+
+                logStockChange(product.getId(), "BULK_UPDATE",
+                        Math.abs(update.getNewQuantity() - before),
+                        before,
+                        update.getNewQuantity(),
+                        null);
+
+                UpdateResult result = new UpdateResult();
+                result.setProductId(update.getProductId());
+                result.setSuccess(true);
+                result.setMessage("Updated successfully");
+                result.setNewQuantity(update.getNewQuantity());
+
+                results.add(result);
+                successCount++;
+
+            } catch (ProductNotFoundException e) {
+
+                UpdateResult result = new UpdateResult();
+                result.setProductId(update.getProductId());
+                result.setSuccess(false);
+                result.setMessage(e.getMessage());
+
+                results.add(result);
+                failureCount++;
+            }
+        }
+
+        BulkUpdateResponse response = new BulkUpdateResponse();
+        response.setTotalRequested(request.getUpdates().size());
+        response.setSuccessCount(successCount);
+        response.setFailureCount(failureCount);
+        response.setResults(results);
+
+        return response;
+    }
+
+    // ===================== LOGGING =====================
+
     private void logStockChange(Long productId, String type,
                                 Integer qty, Integer before,
                                 Integer after, Long orderId) {
-        StockChangeLog log2 = new StockChangeLog();
-        log2.setProductId(productId);
-        log2.setChangeType(type);
-        log2.setQuantityChanged(qty);
-        log2.setStockBefore(before);
-        log2.setStockAfter(after);
-        log2.setOrderId(orderId);
-        stockChangeLogRepository.save(log2);
+
+        StockChangeLog logEntry = new StockChangeLog();
+        logEntry.setProductId(productId);
+        logEntry.setChangeType(type);
+        logEntry.setQuantityChanged(qty);
+        logEntry.setStockBefore(before);
+        logEntry.setStockAfter(after);
+        logEntry.setOrderId(orderId);
+
+        stockChangeLogRepository.save(logEntry);
     }
 
     private ProductResponse mapToResponse(Product product) {
@@ -203,45 +269,6 @@ public class InventoryService {
         response.setDescription(product.getDescription());
         response.setPrice(product.getPrice());
         response.setStockQuantity(product.getStockQuantity());
-        return response;
-    }
-
-    public BulkUpdateResponse bulkUpdateStock(BulkUpdateRequest request) {
-        List<UpdateResult> results = new ArrayList<>();
-        int successCount = 0;
-        int failureCount = 0;
-        for (ProductStockUpdate update : request.getUpdates()) {
-            try {
-                Product product = productRepository.findById(update.getProductId())
-                        .orElseThrow(() ->
-                                new ProductNotFoundException(PRODUCT_NOT_FOUND + ": " + update.getProductId()));
-                Integer stockBefore = product.getStockQuantity();
-                product.setStockQuantity(update.getNewQuantity());
-                productRepository.save(product);
-                int diff = update.getNewQuantity() - stockBefore;
-                logStockChange(product.getId(), "BULK_UPDATE", Math.abs(diff),
-                        stockBefore, update.getNewQuantity(), null);
-                UpdateResult result = new UpdateResult();
-                result.setProductId(update.getProductId());
-                result.setSuccess(true);
-                result.setMessage("Updated successfully");
-                result.setNewQuantity(update.getNewQuantity());
-                results.add(result);
-                successCount++;
-            } catch (ProductNotFoundException e) {
-                UpdateResult result = new UpdateResult();
-                result.setProductId(update.getProductId());
-                result.setSuccess(false);
-                result.setMessage(e.getMessage());
-                results.add(result);
-                failureCount++;
-            }
-        }
-        BulkUpdateResponse response = new BulkUpdateResponse();
-        response.setTotalRequested(request.getUpdates().size());
-        response.setSuccessCount(successCount);
-        response.setFailureCount(failureCount);
-        response.setResults(results);
         return response;
     }
 }

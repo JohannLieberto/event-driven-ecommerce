@@ -1,7 +1,6 @@
 package com.ecommerce.paymentservice.config;
 
 import com.ecommerce.paymentservice.event.OrderCreatedEvent;
-import com.ecommerce.paymentservice.event.PaymentCompletedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -48,7 +47,7 @@ public class KafkaConfig {
 
     // ---- Producer ----
     @Bean
-    public ProducerFactory<String, PaymentCompletedEvent> paymentProducerFactory() {
+    public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -60,7 +59,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate() {
-        return new KafkaTemplate<>(paymentProducerFactory());
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
     }
 }

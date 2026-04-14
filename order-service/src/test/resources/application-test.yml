@@ -34,3 +34,29 @@ eureka:
 inventory:
   service:
     url: http://localhost:8083
+<<<<<<< HEAD
+=======
+
+# Resilience4j Circuit Breaker configuration - test profile
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventoryCheckCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+      inventoryReserveCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+>>>>>>> develop

@@ -1,20 +1,35 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    defer-datasource-initialization: true
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
 
   h2:
     console:
       enabled: true
 
+  kafka:
+    listener:
+      auto-startup: false
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
 eureka:
   client:
     enabled: false
+    register-with-eureka: false
+    fetch-registry: false

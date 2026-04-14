@@ -11,7 +11,6 @@ import com.ecommerce.orderservice.kafka.OrderEventPublisher;
 import com.ecommerce.orderservice.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,8 +34,17 @@ class OrderServiceTest {
     @Mock
     private OrderEventPublisher orderEventPublisher;
 
-    @InjectMocks
+    // Manually constructed so Optional<OrderEventPublisher> is properly populated
     private OrderService orderService;
+
+    @BeforeEach
+    void setUp() {
+        orderService = new OrderService(
+                orderRepository,
+                inventoryClient,
+                Optional.of(orderEventPublisher)
+        );
+    }
 
     @Test
     void createOrder_successfullyPublishesKafkaEvent() {

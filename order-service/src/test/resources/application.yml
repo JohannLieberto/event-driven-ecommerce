@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -8,7 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     database-platform: org.hibernate.dialect.H2Dialect
 
   cloud:
@@ -25,6 +25,7 @@ spring:
     enabled: false
     bootstrap-servers: localhost:9092
 
+<<<<<<< HEAD
 logging:
   level:
     com.ecommerce.orderservice: INFO
@@ -34,3 +35,18 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+=======
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+inventory:
+  service:
+    url: http://localhost:8083
+
+logging:
+  level:
+    com.ecommerce.orderservice: INFO
+>>>>>>> develop

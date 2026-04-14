@@ -20,9 +20,9 @@ public class PaymentEventConsumer {
     private PaymentService paymentService;
 
     @KafkaListener(
-        topics = "order.created",
-        groupId = "payment-service-group",
-        containerFactory = "kafkaListenerContainerFactory"
+            topics = "orders.order-created",   // ✅ FIXED
+            groupId = "payment-service-group",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     public void handleOrderCreated(
             @Payload OrderCreatedEvent event,
@@ -31,7 +31,7 @@ public class PaymentEventConsumer {
             @Header(KafkaHeaders.OFFSET) long offset) {
 
         log.info("[PAYMENT-SERVICE] Received order.created from topic={} partition={} offset={} orderId={}",
-            topic, partition, offset, event.getOrderId());
+                topic, partition, offset, event.getOrderId());
 
         paymentService.processPayment(event);
     }

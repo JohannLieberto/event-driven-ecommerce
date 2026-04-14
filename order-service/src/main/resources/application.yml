@@ -1,4 +1,8 @@
 # Dev-only overrides (port and DB are in application.properties)
+# In order-service/src/main/resources/application.yml, add:
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888
 logging:
   level:
     com.ecommerce: DEBUG

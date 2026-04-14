@@ -22,19 +22,34 @@ public class Notification {
     private Long customerId;
 
     @Column(nullable = false)
-    private String eventType; // PAYMENT_SUCCESS, PAYMENT_FAILED, SHIPMENT_SCHEDULED, INVENTORY_RESERVED, etc.
+    private String eventType;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Column(nullable = false)
-    private String channel; // EMAIL (simulated)
+    private String channel;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime sentAt;
 
-    public Notification() {}
+    @Column
+    private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private NotificationType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private NotificationStatus status;
+
+    @Column(columnDefinition = "TEXT")
+    private String failureReason;
+
+    public Notification() {
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -56,4 +71,16 @@ public class Notification {
 
     public LocalDateTime getSentAt() { return sentAt; }
     public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public NotificationType getType() { return type; }
+    public void setType(NotificationType type) { this.type = type; }
+
+    public NotificationStatus getStatus() { return status; }
+    public void setStatus(NotificationStatus status) { this.status = status; }
+
+    public String getFailureReason() { return failureReason; }
+    public void setFailureReason(String failureReason) { this.failureReason = failureReason; }
 }

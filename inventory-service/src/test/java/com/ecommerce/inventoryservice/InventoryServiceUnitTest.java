@@ -9,14 +9,11 @@ import com.ecommerce.inventoryservice.repository.StockChangeLogRepository;
 import com.ecommerce.inventoryservice.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,24 +21,22 @@ class InventoryServiceUnitTest {
 
     private ProductRepository productRepository;
     private StockChangeLogRepository stockChangeLogRepository;
-    private KafkaTemplate<String, Object> kafkaTemplate;
+
     private InventoryService inventoryService;
 
     @BeforeEach
     void setUp() {
         productRepository = mock(ProductRepository.class);
         stockChangeLogRepository = mock(StockChangeLogRepository.class);
-        kafkaTemplate = mock(KafkaTemplate.class);
 
         inventoryService = new InventoryService(
                 productRepository,
-                stockChangeLogRepository,
-                kafkaTemplate
+                stockChangeLogRepository
         );
     }
 
     @Test
-    void handleOrderCreated_withSufficientStock_publishesInventoryReserved() {
+    void handleOrderCreated_withSufficientStock_reducesStock() {
 
         Product product = new Product();
         product.setId(4L);
@@ -58,19 +53,17 @@ class InventoryServiceUnitTest {
 
         OrderCreatedEvent event = new OrderCreatedEvent();
         event.setOrderId(5001L);
-        event.setEmail("test@test.com");
         event.setItems(List.of(item));
 
         inventoryService.handleOrderCreated(event);
 
         assertEquals(7, product.getStockQuantity());
-
-        verify(kafkaTemplate).send(eq("inventory.inventory-reserved"), any(InventoryReservedEvent.class));
+        verify(productRepository).save(any(Product.class));
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));
     }
 
     @Test
-    void handleOrderCreated_withInsufficientStock_publishesInventoryFailed() {
+    void handleOrderCreated_withInsufficientStock_throwsException() {
 
         Product product = new Product();
         product.setId(4L);
@@ -84,19 +77,16 @@ class InventoryServiceUnitTest {
 
         OrderCreatedEvent event = new OrderCreatedEvent();
         event.setOrderId(5002L);
-        event.setEmail("test@test.com");
         event.setItems(List.of(item));
 
-        inventoryService.handleOrderCreated(event);
+        assertThrows(InsufficientStockException.class,
+                () -> inventoryService.handleOrderCreated(event));
 
-        assertEquals(2, product.getStockQuantity());
-
-        verify(kafkaTemplate).send(eq("inventory.inventory-failed"), any(InventoryFailedEvent.class));
-        verify(productRepository, never()).save(any(Product.class));
+        verify(productRepository, never()).save(any());
     }
 
     @Test
-    void handlePaymentProcessed_confirmsReservation() {
+    void handlePaymentProcessed_doesNothing() {
 
         PaymentProcessedEvent event = new PaymentProcessedEvent();
         event.setOrderId(5003L);
@@ -105,34 +95,26 @@ class InventoryServiceUnitTest {
     }
 
     @Test
-    void handlePaymentFailed_releasesReservation() {
+    void handlePaymentFailed_releasesStock() {
 
         Product product = new Product();
         product.setId(4L);
         product.setStockQuantity(7);
 
-        StockChangeLog reserveLog = new StockChangeLog();
-        reserveLog.setOrderId(5004L);
-        reserveLog.setProductId(4L);
-        reserveLog.setQuantityChanged(3);
-        reserveLog.setChangeType("RESERVE");
-
-        when(stockChangeLogRepository.findByOrderIdAndChangeType(5004L, "RESERVE"))
-                .thenReturn(List.of(reserveLog));
-
-        when(stockChangeLogRepository.existsByOrderIdAndProductIdAndChangeType(5004L, 4L, "RELEASE"))
-                .thenReturn(false);
-
         when(productRepository.findById(4L)).thenReturn(Optional.of(product));
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
+        PaymentFailedEvent.OrderItem item = new PaymentFailedEvent.OrderItem();
+        item.setProductId(4L);
+        item.setQuantity(3);
+
         PaymentFailedEvent event = new PaymentFailedEvent();
         event.setOrderId(5004L);
+        event.setItems(List.of(item));
 
         inventoryService.handlePaymentFailed(event);
 
         assertEquals(10, product.getStockQuantity());
-
         verify(stockChangeLogRepository, atLeastOnce()).save(any(StockChangeLog.class));
     }
 }

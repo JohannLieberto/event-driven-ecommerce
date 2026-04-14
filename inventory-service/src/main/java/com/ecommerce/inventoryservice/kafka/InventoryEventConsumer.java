@@ -41,7 +41,7 @@ public class InventoryEventConsumer {
         log.info("[INVENTORY-SERVICE] Received payment.completed topic={} partition={} offset={} orderId={}",
             topic, partition, offset, event.getOrderId());
 
-        if (!"PAYMENT_SUCCESS".equals(event.getStatus())) {
+        if (!"SUCCESS".equals(event.getStatus())) {
             log.warn("[INVENTORY-SERVICE] Skipping inventory reservation for orderId={} — payment status={}",
                 event.getOrderId(), event.getStatus());
             return;

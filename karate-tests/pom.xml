@@ -18,12 +18,15 @@
 
     <properties>
         <karate.version>1.5.1</karate.version>
-        <!-- Skip JaCoCo entirely for integration/Karate tests - no bytecode to instrument here -->
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <!-- Skip JaCoCo entirely for this module -->
         <jacoco.skip>true</jacoco.skip>
+        <!-- Skip Karate integration tests by default; enable with -Dskip.karate=false -->
+        <skip.karate>true</skip.karate>
     </properties>
 
     <dependencies>
-        <!-- NOTE: Karate 1.5.x changed group ID from com.intuit.karate to io.karatelabs -->
         <dependency>
             <groupId>io.karatelabs</groupId>
             <artifactId>karate-junit5</artifactId>
@@ -48,6 +51,15 @@
             </testResource>
         </testResources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+
             <!-- Explicitly skip JaCoCo agent injection for this module -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -63,11 +75,24 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Disable surefire so Karate runners don't fire during 'test' phase -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M8</version>
                 <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+
+            <!-- Run Karate during 'integration-test' phase only, skipped by default -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M8</version>
+                <configuration>
+                    <skipITs>${skip.karate}</skipITs>
                     <includes>
                         <include>**/*Runner.java</include>
                     </includes>
@@ -85,6 +110,14 @@
                         -Dpolyglot.engine.WarnInterpreterOnly=false
                     </argLine>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

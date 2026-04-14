@@ -1,20 +1,30 @@
 package com.ecommerce.paymentservice.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import java.math.BigDecimal;
 
 @Entity
+@Table(name = "payments")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String orderId;
-    private Double amount;
+    @Column(nullable = false)
+    private Long orderId;
+
+    @Column(nullable = false)
+    private Long customerId;
+
+    @Column
+    private BigDecimal amount;
+
+    @Column
+    private String transactionId;
+
+    @Column(nullable = false)
     private String status;
 }

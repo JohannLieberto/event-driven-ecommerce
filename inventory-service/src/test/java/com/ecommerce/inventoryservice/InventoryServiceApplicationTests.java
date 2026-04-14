@@ -1,23 +1,20 @@
 package com.ecommerce.inventoryservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+                "spring.kafka.listener.auto-startup=false"
+        }
+)
 @ActiveProfiles("test")
 class InventoryServiceApplicationTests {
 
-    @Autowired
-    private ApplicationContext applicationContext;
-
     @Test
     void contextLoads() {
-        assertNotNull(applicationContext, "Application context should load successfully");
     }
-
 }

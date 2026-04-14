@@ -4,7 +4,7 @@ function fn() {
 
   var config = {
     env: env,
-    gatewayUrl: 'http://localhost:8080',
+    gatewayUrl: 'http://localhost:8088',
     orderServiceUrl: 'http://localhost:8081',
     paymentServiceUrl: 'http://localhost:8084',
     inventoryServiceUrl: 'http://localhost:8083',
@@ -22,7 +22,7 @@ function fn() {
   }
 
   if (env === 'ci') {
-    config.gatewayUrl = 'http://localhost:8080';
+    config.gatewayUrl = 'http://localhost:8088';
     config.orderServiceUrl = 'http://localhost:8081';
     config.paymentServiceUrl = 'http://localhost:8084';
     config.inventoryServiceUrl = 'http://localhost:8083';
