@@ -1,7 +1,7 @@
 Feature: Order status email notifications
 
   Background:
-    * url 'http://localhost:8086'
+    * url notificationServiceUrl
 
   Scenario: verify notifications can be fetched for an order
     Given path 'api/notifications/order/9101'

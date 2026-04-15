@@ -110,53 +110,108 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Cleaning up any stale containers from previous runs ==='
-                sh 'docker compose down --remove-orphans || true'
+                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
+                sh 'docker compose -f docker-compose.yml up -d --build'
 
-                echo '=== Starting infra (Zookeeper, Kafka, Postgres) ==='
-                sh 'docker compose up -d zookeeper kafka postgres kafka-ui'
-
-                echo '=== Waiting for Kafka + Postgres to be healthy (max 90s each) ==='
+                echo '=== Waiting for infrastructure to be ready ==='
                 sh '''
-                    wait_healthy() {
-                        CONTAINER=$1
-                        MAX=18
+                    echo "=== Waiting for Zookeeper ==="
+                    RETRIES=20
+                    COUNT=0
+                    until docker exec zookeeper bash -c "echo ruok | nc localhost 2181 | grep imok" >/dev/null 2>&1; do
+                        COUNT=$((COUNT+1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Zookeeper did not become ready. Aborting."
+                            docker compose -f docker-compose.yml logs zookeeper
+                            exit 1
+                        fi
+                        echo "Zookeeper not ready yet... $COUNT/$RETRIES. Retrying in 3s."
+                        sleep 3
+                    done
+                    echo "Zookeeper is ready ✅"
+
+                    echo "=== Waiting for Kafka ==="
+                    RETRIES=36
+                    COUNT=0
+                    until docker exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+                        COUNT=$((COUNT+1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
+                            docker compose -f docker-compose.yml logs kafka
+                            exit 1
+                        fi
+                        echo "Kafka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
+                        sleep 5
+                    done
+                    echo "Kafka is ready ✅"
+
+                    echo "=== Waiting for Postgres ==="
+                    RETRIES=20
+                    COUNT=0
+                    until docker exec postgres pg_isready -U postgres >/dev/null 2>&1; do
+                        COUNT=$((COUNT+1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Postgres did not become ready. Aborting."
+                            docker compose -f docker-compose.yml logs postgres
+                            exit 1
+                        fi
+                        echo "Postgres not ready yet... $COUNT/$RETRIES. Retrying in 3s."
+                        sleep 3
+                    done
+                    echo "Postgres is ready ✅"
+
+                    echo "=== Waiting for Eureka Server ==="
+                    RETRIES=24
+                    COUNT=0
+                    until curl -sf http://localhost:8761/actuator/health | grep -q "UP"; do
+                        COUNT=$((COUNT+1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Eureka Server did not become ready. Aborting."
+                            docker compose -f docker-compose.yml logs eureka-server
+                            exit 1
+                        fi
+                        echo "Eureka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
+                        sleep 5
+                    done
+                    echo "Eureka is ready ✅"
+
+                    echo "=== Waiting for Application Services ==="
+                    for svc in \
+                        "api-gateway:http://localhost:8088/actuator/health" \
+                        "order-service:http://localhost:8081/actuator/health" \
+                        "inventory-service:http://localhost:8083/actuator/health" \
+                        "payment-service:http://localhost:8084/actuator/health" \
+                        "shipping-service:http://localhost:8085/actuator/health" \
+                        "notification-service:http://localhost:8086/actuator/health"; do
+                        NAME=${svc%%:*}
+                        URL=${svc#*:}
                         COUNT=0
-                        while [ $COUNT -lt $MAX ]; do
-                            STATUS=$(docker inspect --format="{{.State.Health.Status}}" $CONTAINER 2>/dev/null || echo "missing")
-                            if [ "$STATUS" = "healthy" ]; then
-                                echo "$CONTAINER is healthy ✅"
-                                return 0
-                            fi
-                            echo "$CONTAINER status: $STATUS — attempt $((COUNT+1))/$MAX, retrying in 5s..."
+                        until curl -sf "$URL" | grep -q "UP" || [ $COUNT -ge 24 ]; do
+                            echo "$NAME not ready (attempt $((COUNT+1))/24)..."
+                            COUNT=$((COUNT+1))
                             sleep 5
-                            COUNT=$((COUNT + 1))
                         done
-                        echo "ERROR: $CONTAINER did not become healthy within 90s."
-                        docker compose logs $CONTAINER --tail=30
-                        return 1
-                    }
+                        if [ $COUNT -ge 24 ]; then
+                            echo "ERROR: $NAME did not become ready. Aborting."
+                            docker compose -f docker-compose.yml logs $NAME
+                            exit 1
+                        fi
+                        echo "$NAME is UP ✅"
+                    done
 
-                    wait_healthy kafka || exit 1
-                    wait_healthy postgres || exit 1
+                    echo "=== All Services Ready ✅ ==="
                 '''
-
-                echo '=== Starting application services ==='
-                sh 'docker compose up -d --build eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service'
-
-                echo '=== Waiting 60s for Spring services to register with Eureka ==='
-                sh 'sleep 60'
             }
         }
 
         stage('Karate API Tests') {
             steps {
-                echo '=== Running Karate integration tests via Failsafe ==='
-                sh 'mvn verify -pl karate-tests -Dskip.karate=false -Dkarate.env=ci'
+                echo '=== Running Karate API and E2E tests ==='
+                sh 'mvn test -pl karate-tests -Dkarate.env=ci'
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'karate-tests/target/failsafe-reports/*.xml'
+                    junit 'karate-tests/target/surefire-reports/*.xml'
                     publishHTML(target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -171,8 +226,8 @@ pipeline {
 
         stage('Stop Infrastructure') {
             steps {
-                echo '=== Tearing down all containers ==='
-                sh 'docker compose down --remove-orphans'
+                echo '=== Tearing down Docker Compose ==='
+                sh 'docker compose -f docker-compose.yml down -v'
             }
         }
 
@@ -231,7 +286,7 @@ pipeline {
         }
         failure {
             echo '=== Pipeline FAILED - check logs above ==='
-            sh 'docker compose logs --tail=50 || true'
+            sh 'docker compose -f docker-compose.yml logs --tail=50 || true'
         }
         always {
             cleanWs()
