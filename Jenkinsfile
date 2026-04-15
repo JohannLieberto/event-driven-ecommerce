@@ -110,31 +110,42 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Starting persistent infra (Kafka, Zookeeper, Postgres) ==='
-                sh 'docker compose up -d zookeeper kafka kafka-ui postgres'
+                echo '=== Cleaning up any stale containers from previous runs ==='
+                sh 'docker compose down --remove-orphans || true'
 
-                echo '=== Waiting for Kafka to become fully ready ==='
+                echo '=== Starting infra (Zookeeper, Kafka, Postgres) ==='
+                sh 'docker compose up -d zookeeper kafka postgres kafka-ui'
+
+                echo '=== Waiting for Kafka + Postgres to be healthy (max 90s each) ==='
                 sh '''
-                    RETRIES=36
-                    COUNT=0
-                    until docker exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
-                        COUNT=$((COUNT + 1))
-                        if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
-                            docker compose logs kafka
-                            exit 1
-                        fi
-                        echo "Kafka not ready yet... attempt $COUNT/$RETRIES. Retrying in 5s."
-                        sleep 5
-                    done
-                    echo "Kafka is ready after $((COUNT * 5))s. ✅"
+                    wait_healthy() {
+                        CONTAINER=$1
+                        MAX=18
+                        COUNT=0
+                        while [ $COUNT -lt $MAX ]; do
+                            STATUS=$(docker inspect --format="{{.State.Health.Status}}" $CONTAINER 2>/dev/null || echo "missing")
+                            if [ "$STATUS" = "healthy" ]; then
+                                echo "$CONTAINER is healthy ✅"
+                                return 0
+                            fi
+                            echo "$CONTAINER status: $STATUS — attempt $((COUNT+1))/$MAX, retrying in 5s..."
+                            sleep 5
+                            COUNT=$((COUNT + 1))
+                        done
+                        echo "ERROR: $CONTAINER did not become healthy within 90s."
+                        docker compose logs $CONTAINER --tail=30
+                        return 1
+                    }
+
+                    wait_healthy kafka || exit 1
+                    wait_healthy postgres || exit 1
                 '''
 
-                echo '=== Building and starting application services ==='
+                echo '=== Starting application services ==='
                 sh 'docker compose up -d --build eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service'
 
-                echo '=== Waiting for all Spring services to register with Eureka ==='
-                sh 'sleep 45'
+                echo '=== Waiting 60s for Spring services to register with Eureka ==='
+                sh 'sleep 60'
             }
         }
 
@@ -160,8 +171,8 @@ pipeline {
 
         stage('Stop Infrastructure') {
             steps {
-                echo '=== Tearing down app services (keeping infra volumes) ==='
-                sh 'docker compose down'
+                echo '=== Tearing down all containers ==='
+                sh 'docker compose down --remove-orphans'
             }
         }
 
