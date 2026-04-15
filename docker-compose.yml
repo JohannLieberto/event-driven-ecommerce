@@ -94,7 +94,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 90s
 
   api-gateway:
     build:
@@ -116,7 +116,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
   order-service:
     build:
@@ -143,7 +143,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
   inventory-service:
     build:
@@ -170,7 +170,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
   payment-service:
     build:
@@ -197,7 +197,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
   shipping-service:
     build:
@@ -224,7 +224,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
   notification-service:
     build:
@@ -251,7 +251,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 8
-      start_period: 60s
+      start_period: 100s
 
 volumes:
   postgres-data:
