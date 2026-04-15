@@ -113,11 +113,11 @@ pipeline {
                 echo '=== Starting persistent infra (Kafka, Zookeeper, Postgres) ==='
                 sh 'docker compose up -d zookeeper kafka kafka-ui postgres'
 
-                echo '=== Waiting for Kafka to become fully healthy ==='
+                echo '=== Waiting for Kafka to become fully ready ==='
                 sh '''
                     RETRIES=36
                     COUNT=0
-                    until docker exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list > /dev/null 2>&1; do
+                    until docker exec kafka kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1; do
                         COUNT=$((COUNT + 1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
@@ -127,7 +127,7 @@ pipeline {
                         echo "Kafka not ready yet... attempt $COUNT/$RETRIES. Retrying in 5s."
                         sleep 5
                     done
-                    echo "Kafka is ready after $((COUNT * 5))s."
+                    echo "Kafka is ready after $((COUNT * 5))s. ✅"
                 '''
 
                 echo '=== Building and starting application services ==='
