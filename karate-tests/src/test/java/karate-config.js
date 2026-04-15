@@ -13,7 +13,7 @@ function fn() {
   };
 
   if (env === 'docker') {
-    config.gatewayUrl = 'http://api-gateway:8080';
+    config.gatewayUrl = 'http://api-gateway:8088';
     config.orderServiceUrl = 'http://order-service:8081';
     config.paymentServiceUrl = 'http://payment-service:8084';
     config.inventoryServiceUrl = 'http://inventory-service:8083';
@@ -22,12 +22,13 @@ function fn() {
   }
 
   if (env === 'ci') {
-    config.gatewayUrl = 'http://api-gateway:8088';
-    config.orderServiceUrl = 'http://order-service:8081';
-    config.paymentServiceUrl = 'http://payment-service:8084';
-    config.inventoryServiceUrl = 'http://inventory-service:8083';
-    config.shippingServiceUrl = 'http://shipping-service:8085';
-    config.notificationServiceUrl = 'http://notification-service:8086';
+    // Jenkins agent runs on the host — use localhost with Docker-mapped ports
+    config.gatewayUrl = 'http://localhost:8088';
+    config.orderServiceUrl = 'http://localhost:8081';
+    config.paymentServiceUrl = 'http://localhost:8084';
+    config.inventoryServiceUrl = 'http://localhost:8083';
+    config.shippingServiceUrl = 'http://localhost:8085';
+    config.notificationServiceUrl = 'http://localhost:8086';
   }
 
   return config;
