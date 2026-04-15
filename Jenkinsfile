@@ -112,7 +112,7 @@ pipeline {
             steps {
                 echo '=== Force-removing any orphaned containers from previous runs ==='
                 sh '''
-                    docker rm -f zookeeper kafka postgres eureka-server \
+                    docker rm -f zookeeper kafka kafka-ui postgres eureka-server \
                         order-service inventory-service payment-service \
                         shipping-service notification-service api-gateway 2>/dev/null || true
                     docker network rm ecommerce-network 2>/dev/null || true
