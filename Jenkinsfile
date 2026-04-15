@@ -122,7 +122,7 @@ pipeline {
                 sh 'docker compose -f docker-compose.yml up -d --build'
 
                 echo '=== Waiting for infrastructure to pass healthchecks ==='
-                sh 'docker compose -f docker-compose.yml wait --timeout 180 zookeeper kafka postgres eureka-server'
+                sh 'docker compose -f docker-compose.yml wait zookeeper kafka postgres eureka-server'
 
                 echo '=== Waiting for microservices to be healthy ==='
                 sh '''
