@@ -180,6 +180,24 @@ pipeline {
                         echo "$svc is UP ✅"
                     done
 
+                    echo "=== Waiting for Gateway to discover all services ==="
+                    SERVICES="order-service inventory-service payment-service shipping-service notification-service"
+                    RETRIES=30
+                    for SVC in $SERVICES; do
+                        COUNT=0
+                        until curl -sf http://localhost:8088/actuator/gateway/routes | grep -q "$SVC"; do
+                            COUNT=$((COUNT+1))
+                            if [ $COUNT -ge $RETRIES ]; then
+                                echo "ERROR: $SVC not visible in gateway routes after $((RETRIES * 5))s. Aborting."
+                                docker compose -f docker-compose.yml logs api-gateway
+                                exit 1
+                            fi
+                            echo "$SVC not in routes yet... $COUNT/$RETRIES. Retrying in 5s."
+                            sleep 5
+                        done
+                        echo "$SVC discovered by gateway ✅"
+                    done
+
                     echo "=== All Services Ready ✅ ==="
                 '''
             }
