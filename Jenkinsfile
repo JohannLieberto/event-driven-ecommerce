@@ -110,6 +110,9 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
+                echo '=== Cleaning up any leftover containers from previous runs ==='
+                sh 'docker compose -f docker-compose.yml down -v || true'
+
                 echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
                 sh 'docker compose -f docker-compose.yml up -d --build'
 
@@ -140,14 +143,7 @@ pipeline {
         stage('Karate API Tests') {
             steps {
                 echo '=== Running Karate API and E2E tests ==='
-                sh '''
-                    docker run --rm \
-                        --network ecommerce-network \
-                        -v $(pwd)/karate-tests:/app \
-                        -w /app \
-                        maven:3.9-eclipse-temurin-21 \
-                        mvn verify -Dkarate.env=ci
-                '''
+                sh 'mvn test -pl karate-tests -Dkarate.env=ci'
             }
             post {
                 always {
