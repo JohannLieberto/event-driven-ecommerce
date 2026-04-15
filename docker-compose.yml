@@ -9,7 +9,7 @@ services:
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      test: ["CMD-SHELL", "zkServer.sh status"]
       interval: 10s
       timeout: 5s
       retries: 10
