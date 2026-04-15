@@ -110,38 +110,31 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Force-removing any orphaned containers from previous runs ==='
+                echo '=== Starting persistent infra (Kafka, Zookeeper, Postgres) ==='
+                sh 'docker compose up -d zookeeper kafka kafka-ui postgres'
+
+                echo '=== Waiting for Kafka to become fully healthy ==='
                 sh '''
-                    docker rm -f zookeeper kafka kafka-ui postgres eureka-server \
-                        order-service inventory-service payment-service \
-                        shipping-service notification-service api-gateway 2>/dev/null || true
-                    docker network rm ecommerce-network 2>/dev/null || true
-                '''
-
-                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml up -d --build'
-
-                echo '=== Waiting for infrastructure to pass healthchecks ==='
-                sh 'docker compose -f docker-compose.yml wait zookeeper kafka postgres eureka-server'
-
-                echo '=== Waiting for microservices to be healthy ==='
-                sh '''
-                    SERVICES="order-service inventory-service payment-service shipping-service notification-service api-gateway"
-                    for SERVICE in $SERVICES; do
-                        echo "Waiting for $SERVICE..."
-                        COUNT=0
-                        until [ $(docker inspect --format="{{.State.Health.Status}}" $SERVICE 2>/dev/null) = "healthy" ] || [ $COUNT -ge 36 ]; do
-                            echo "$SERVICE not ready yet... attempt $COUNT/36. Retrying in 5s."
-                            sleep 5
-                            COUNT=$((COUNT + 1))
-                        done
-                        if [ $COUNT -ge 36 ]; then
-                            echo "ERROR: $SERVICE did not become healthy in time."
+                    RETRIES=36
+                    COUNT=0
+                    until docker exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list > /dev/null 2>&1; do
+                        COUNT=$((COUNT + 1))
+                        if [ $COUNT -ge $RETRIES ]; then
+                            echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
+                            docker compose logs kafka
                             exit 1
                         fi
-                        echo "$SERVICE is healthy."
+                        echo "Kafka not ready yet... attempt $COUNT/$RETRIES. Retrying in 5s."
+                        sleep 5
                     done
+                    echo "Kafka is ready after $((COUNT * 5))s."
                 '''
+
+                echo '=== Building and starting application services ==='
+                sh 'docker compose up -d --build eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service'
+
+                echo '=== Waiting for all Spring services to register with Eureka ==='
+                sh 'sleep 45'
             }
         }
 
@@ -167,8 +160,8 @@ pipeline {
 
         stage('Stop Infrastructure') {
             steps {
-                echo '=== Tearing down Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml down -v'
+                echo '=== Tearing down app services (keeping infra volumes) ==='
+                sh 'docker compose down'
             }
         }
 
@@ -227,10 +220,9 @@ pipeline {
         }
         failure {
             echo '=== Pipeline FAILED - check logs above ==='
-            sh 'docker compose -f docker-compose.yml logs --tail=50 || true'
+            sh 'docker compose logs --tail=50 || true'
         }
         always {
-            sh 'docker compose -f docker-compose.yml down -v || true'
             cleanWs()
         }
     }
