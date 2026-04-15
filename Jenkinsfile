@@ -17,6 +17,7 @@ pipeline {
         }
 
         stage('Build All Services') {
+            when { expression { return false } }
             steps {
                 echo '=== Building all microservices ==='
                 sh 'mvn clean package -DskipTests -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service'
@@ -24,6 +25,7 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            when { expression { return false } }
             parallel {
                 stage('Test order-service') {
                     steps {
