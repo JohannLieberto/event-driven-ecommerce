@@ -5,6 +5,7 @@ pipeline {
         DOCKER_REGISTRY = 'HiteshKhade'
         MAVEN_OPTS = '-Dmaven.test.failure.ignore=false'
         KARATE_ENV = 'ci'
+        MAVEN_CACHE = "${env.HOME}/.m2/repository"
     }
 
     stages {
@@ -19,7 +20,7 @@ pipeline {
         stage('Build All Services') {
             steps {
                 echo '=== Building all microservices ==='
-                sh 'mvn clean package -DskipTests -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service'
+                sh 'mvn clean package -DskipTests -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service -Dmaven.repo.local=${MAVEN_CACHE}'
             }
         }
 
@@ -27,7 +28,7 @@ pipeline {
             parallel {
                 stage('Test order-service') {
                     steps {
-                        sh 'mvn test -pl order-service'
+                        sh 'mvn test -pl order-service -Dmaven.repo.local=${MAVEN_CACHE}'
                     }
                     post {
                         always {
@@ -43,7 +44,7 @@ pipeline {
                 }
                 stage('Test inventory-service') {
                     steps {
-                        sh 'mvn test -pl inventory-service'
+                        sh 'mvn test -pl inventory-service -Dmaven.repo.local=${MAVEN_CACHE}'
                     }
                     post {
                         always {
@@ -59,7 +60,7 @@ pipeline {
                 }
                 stage('Test payment-service') {
                     steps {
-                        sh 'mvn test -pl payment-service'
+                        sh 'mvn test -pl payment-service -Dmaven.repo.local=${MAVEN_CACHE}'
                     }
                     post {
                         always {
@@ -75,7 +76,7 @@ pipeline {
                 }
                 stage('Test shipping-service') {
                     steps {
-                        sh 'mvn test -pl shipping-service'
+                        sh 'mvn test -pl shipping-service -Dmaven.repo.local=${MAVEN_CACHE}'
                     }
                     post {
                         always {
@@ -91,7 +92,7 @@ pipeline {
                 }
                 stage('Test notification-service') {
                     steps {
-                        sh 'mvn test -pl notification-service'
+                        sh 'mvn test -pl notification-service -Dmaven.repo.local=${MAVEN_CACHE}'
                     }
                     post {
                         always {
@@ -180,22 +181,35 @@ pipeline {
                         echo "$svc is UP ✅"
                     done
 
-                    echo "=== Waiting for Gateway to discover all services ==="
-                    SERVICES="order-service inventory-service payment-service shipping-service notification-service"
-                    RETRIES=30
+                    echo "=== Waiting for services to register in Eureka ==="
+                    SERVICES="ORDER-SERVICE INVENTORY-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
+                    MAX_ATTEMPTS=20
                     for SVC in $SERVICES; do
                         COUNT=0
-                        until curl -sf http://localhost:8088/actuator/gateway/routes | grep -q "$SVC"; do
+                        echo "Waiting for $SVC to appear in Eureka registry..."
+                        until \
+                            curl -sf \
+                                -H "Accept: application/json" \
+                                "http://localhost:8761/eureka/apps/${SVC}" \
+                            | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    status = d['application']['instance'][0]['status']
+    sys.exit(0 if status == 'UP' else 1)
+except Exception:
+    sys.exit(1)
+" 2>/dev/null; do
                             COUNT=$((COUNT+1))
-                            if [ $COUNT -ge $RETRIES ]; then
-                                echo "ERROR: $SVC not visible in gateway routes after $((RETRIES * 5))s. Aborting."
-                                docker compose -f docker-compose.yml logs api-gateway
+                            if [ $COUNT -ge $MAX_ATTEMPTS ]; then
+                                echo "ERROR: $SVC did not register in Eureka after $((MAX_ATTEMPTS * 15))s. Aborting."
+                                docker compose -f docker-compose.yml logs eureka-server
                                 exit 1
                             fi
-                            echo "$SVC not in routes yet... $COUNT/$RETRIES. Retrying in 5s."
-                            sleep 5
+                            echo "$SVC not in Eureka yet... $COUNT/$MAX_ATTEMPTS. Retrying in 15s."
+                            sleep 15
                         done
-                        echo "$SVC discovered by gateway ✅"
+                        echo "$SVC registered in Eureka ✅"
                     done
 
                     echo "=== All Services Ready ✅ ==="
@@ -206,7 +220,7 @@ pipeline {
         stage('Karate API Tests') {
             steps {
                 echo '=== Running Karate API and E2E tests ==='
-                sh 'mvn verify -pl karate-tests -Dkarate.env=ci -Dskip.karate=false'
+                sh 'mvn verify -pl karate-tests -Dkarate.env=ci -Dskip.karate=false -Dmaven.repo.local=${MAVEN_CACHE}'
             }
             post {
                 always {
