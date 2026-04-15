@@ -29,19 +29,19 @@ The healthcheck command `kafka-broker-api-versions.sh --bootstrap-server localho
 the broker advertises itself as `kafka:9092` internally, not `localhost`.
 This was a **healthcheck command issue**, not a Kafka startup issue.
 
-## Current Fix (Pushed — Awaiting Jenkins Result)
+## Current Fix (Pushed ✅ — Awaiting Jenkins Result)
 - **docker-compose.yml:** Kafka healthcheck replaced with pure TCP port check:
   `bash -c 'cat /dev/null > /dev/tcp/localhost/9092'`
 - Verified working on EC2 via `docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092'` → exit code 0
-- Timings tightened: `interval: 10s`, `timeout: 10s`, `retries: 10`, `start_period: 30s`
-- **Commit:** latest on `develop` — April 15 2026 ~18:18 BST
+- Timings: `interval: 10s`, `timeout: 10s`, `retries: 10`, `start_period: 30s`
+- **Commit:** [`4cc474b`](https://github.com/JohannLieberto/event-driven-ecommerce/commit/4cc474bb2a9ae797935d268067f673eb658d482b) — April 15 2026 ~18:19 BST
 
 ## Next Steps
 - [ ] Trigger Jenkins build and confirm **Start Infrastructure** stage passes
-- [ ] If passing: pipeline is unblocked, move to Karate test fixes
-- [ ] If failing: paste `docker ps -a` and `docker logs kafka` output
+- [ ] If passing: pipeline is unblocked — move to Karate test fixes
+- [ ] If failing: paste `docker ps -a` and `docker logs kafka` output here
 
 ## Branch State
-- Last fix pushed: April 15 2026, ~18:18 BST
-- Jenkins: build #38 to be triggered
-- All previous builds (#26–#37) failed at **Start Infrastructure** stage
+- **Last fix pushed:** April 15 2026, ~18:19 BST
+- **Jenkins:** next build to be triggered (builds #26–#38 all failed at **Start Infrastructure**)
+- **Status:** TCP healthcheck fix live on `develop`, awaiting CI confirmation
