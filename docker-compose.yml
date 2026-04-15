@@ -38,11 +38,11 @@ services:
     networks:
       - ecommerce-network
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
-      interval: 15s
-      timeout: 45s
+      test: ["CMD-SHELL", "bash -c 'cat /dev/null > /dev/tcp/localhost/9092'"]
+      interval: 10s
+      timeout: 10s
       retries: 10
-      start_period: 60s
+      start_period: 30s
 
   kafka-ui:
     image: ghcr.io/kafbat/kafka-ui:latest

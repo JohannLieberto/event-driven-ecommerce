@@ -21,19 +21,27 @@ All dependent services (order, inventory, payment, shipping, notification) wait 
 | ZK healthcheck with `zkServer.sh` + `ruok` | `ruok` four-letter command disabled by default |
 | Removed ZK healthcheck, used `service_started` | Kafka starts before ZK port is ready |
 | `kafka-topics.sh --list` with `start_period: 60s` | Unreliable exit code, still unhealthy |
-| `kafka-broker-api-versions.sh localhost:9092` + ZK timeouts | Kafka container exiting (1) on boot — crash before healthcheck |
+| `kafka-broker-api-versions.sh localhost:9092` + ZK timeouts | Kafka running fine but healthcheck returning non-zero — broker registered as `kafka:9092` not `localhost` |
+
+## Root Cause (Confirmed April 15 2026)
+Kafka was **fully started and healthy** — `docker logs kafka` showed `[KafkaServer id=1] started` successfully.
+The healthcheck command `kafka-broker-api-versions.sh --bootstrap-server localhost:9092` was failing because
+the broker advertises itself as `kafka:9092` internally, not `localhost`.
+This was a **healthcheck command issue**, not a Kafka startup issue.
 
 ## Current Fix (Pushed — Awaiting Jenkins Result)
-- **docker-compose.yml:** `restart: on-failure` added to Kafka, `kafka-broker-api-versions.sh --bootstrap-server localhost:9092` healthcheck, ZK timeout env vars
-- **Jenkinsfile:** `docker compose down -v --remove-orphans` before `up --build` to clear stale state; Kafka readiness loop updated to use `localhost:9092`
-- **Commit:** latest on `develop` — April 15 2026
+- **docker-compose.yml:** Kafka healthcheck replaced with pure TCP port check:
+  `bash -c 'cat /dev/null > /dev/tcp/localhost/9092'`
+- Verified working on EC2 via `docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092'` → exit code 0
+- Timings tightened: `interval: 10s`, `timeout: 10s`, `retries: 10`, `start_period: 30s`
+- **Commit:** latest on `develop` — April 15 2026 ~18:18 BST
 
 ## Next Steps
-- [ ] Wait for Jenkins build #37 result
+- [ ] Trigger Jenkins build and confirm **Start Infrastructure** stage passes
 - [ ] If passing: pipeline is unblocked, move to Karate test fixes
-- [ ] If failing: pull exact `docker compose logs kafka` output and audit further
+- [ ] If failing: paste `docker ps -a` and `docker logs kafka` output
 
 ## Branch State
-- Last fix pushed: April 15 2026, ~18:01 BST
-- Jenkins: build #37 triggered — awaiting result
-- All previous builds (#26, #30, #36) failed at **Start Infrastructure** stage
+- Last fix pushed: April 15 2026, ~18:18 BST
+- Jenkins: build #38 to be triggered
+- All previous builds (#26–#37) failed at **Start Infrastructure** stage
