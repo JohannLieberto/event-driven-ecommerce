@@ -131,7 +131,7 @@ pipeline {
                         echo "Kafka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
                         sleep 5
                     done
-                    echo "Kafka is ready ✅"
+                    echo "Kafka is ready \u2705"
 
                     echo "=== Waiting for Postgres ==="
                     RETRIES=20
@@ -146,7 +146,7 @@ pipeline {
                         echo "Postgres not ready yet... $COUNT/$RETRIES. Retrying in 3s."
                         sleep 3
                     done
-                    echo "Postgres is ready ✅"
+                    echo "Postgres is ready \u2705"
 
                     echo "=== Waiting for Eureka Server ==="
                     RETRIES=24
@@ -161,33 +161,26 @@ pipeline {
                         echo "Eureka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
                         sleep 5
                     done
-                    echo "Eureka is ready ✅"
+                    echo "Eureka is ready \u2705"
 
                     echo "=== Waiting for Application Services ==="
-                    for svc in \
-                        "api-gateway:http://localhost:8088/actuator/health" \
-                        "order-service:http://localhost:8081/actuator/health" \
-                        "inventory-service:http://localhost:8083/actuator/health" \
-                        "payment-service:http://localhost:8084/actuator/health" \
-                        "shipping-service:http://localhost:8085/actuator/health" \
-                        "notification-service:http://localhost:8086/actuator/health"; do
-                        NAME=${svc%%:*}
-                        URL=${svc#*:}
+                    for svc in api-gateway order-service inventory-service payment-service shipping-service notification-service; do
                         COUNT=0
-                        until curl -sf "$URL" >/dev/null 2>&1 || [ $COUNT -ge 24 ]; do
-                            echo "$NAME not ready (attempt $((COUNT+1))/24)..."
+                        RETRIES=24
+                        until docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null | grep -q 'healthy'; do
                             COUNT=$((COUNT+1))
+                            if [ $COUNT -ge $RETRIES ]; then
+                                echo "ERROR: $svc did not become healthy after $((RETRIES * 5))s. Aborting."
+                                docker compose -f docker-compose.yml logs "$svc"
+                                exit 1
+                            fi
+                            echo "$svc not ready (attempt $COUNT/$RETRIES)..."
                             sleep 5
                         done
-                        if [ $COUNT -ge 24 ]; then
-                            echo "ERROR: $NAME did not become ready. Aborting."
-                            docker compose -f docker-compose.yml logs $NAME
-                            exit 1
-                        fi
-                        echo "$NAME is UP ✅"
+                        echo "$svc is UP \u2705"
                     done
 
-                    echo "=== All Services Ready ✅ ==="
+                    echo "=== All Services Ready \u2705 ==="
                 '''
             }
         }
