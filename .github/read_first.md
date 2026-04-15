@@ -22,9 +22,9 @@ This document tracks known issues, applied fixes, and important context for the 
 
 ### [2026-04-15] Eureka Server Readiness Check — `curl` → `docker inspect`
 
-**Commit:** `897b742` 
-**Branch:** `develop` 
-**Stage affected:** `Start Infrastructure` 
+**Commit:** `897b742`
+**Branch:** `develop`
+**Stage affected:** `Start Infrastructure`
 
 #### Problem
 
@@ -68,9 +68,109 @@ Docker's verdict is authoritative and environment-agnostic — it runs inside th
 
 ---
 
+### [2026-04-15] Gateway Route Poll → Eureka REST API Check
+
+**Branch:** `develop`
+**Stage affected:** `Start Infrastructure`
+
+#### Problem
+
+After the 6 application services became healthy (via `docker inspect`), the pipeline polled the **API Gateway** routes endpoint to confirm service discovery:
+
+```bash
+curl -sf http://localhost:8088/actuator/gateway/routes | grep -q "$SVC"
+```
+
+This was unreliable — the gateway route table may not reflect Eureka registration state accurately, and the gateway itself could be slow to refresh its route cache even after services are fully registered in Eureka.
+
+#### Fix
+
+Replaced the gateway route poll with a **direct Eureka REST API check** per service. Each service is queried individually at `http://localhost:8761/eureka/apps/${SVC}` and the response JSON is validated with a `python3` inline script to confirm `status == UP`:
+
+```bash
+# Before — gateway route poll
+SERVICES="order-service inventory-service payment-service shipping-service notification-service"
+RETRIES=30
+for SVC in $SERVICES; do
+    until curl -sf http://localhost:8088/actuator/gateway/routes | grep -q "$SVC"; do
+        ...
+        sleep 5
+    done
+done
+
+# After — direct Eureka REST API check
+SERVICES="ORDER-SERVICE INVENTORY-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
+MAX_ATTEMPTS=20
+for SVC in $SERVICES; do
+    until \
+        curl -sf \
+            -H "Accept: application/json" \
+            "http://localhost:8761/eureka/apps/${SVC}" \
+        | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    status = d['application']['instance'][0]['status']
+    sys.exit(0 if status == 'UP' else 1)
+except Exception:
+    sys.exit(1)
+" 2>/dev/null; do
+        ...
+        sleep 15
+    done
+done
+```
+
+Key differences:
+- Service names are **uppercase** to match Eureka's registry format (`ORDER-SERVICE` not `order-service`)
+- Retry interval increased from **5s → 15s** (Eureka heartbeat interval is 30s; polling faster than that is wasteful)
+- Max attempts reduced from **30 → 20** (total timeout: 20 × 15s = 5 minutes)
+- Checks `status == UP` explicitly — a registered-but-DOWN instance would previously pass the gateway grep
+
+#### Status
+✅ Fix applied. Already present in `develop` Jenkinsfile.
+
+---
+
+### [2026-04-15] Maven Local Repository Cache — `-Dmaven.repo.local`
+
+**Branch:** `develop`
+**Stage affected:** `Build All Services`, `Unit Tests` (all 5), `Karate API Tests`
+
+#### Problem
+
+Maven was downloading dependencies from the internet on every pipeline run because Jenkins workspace isolation does not reuse the default `~/.m2/repository` across builds reliably, and different pipeline stages may run with different working directories.
+
+#### Fix
+
+Added a `MAVEN_CACHE` environment variable and passed `-Dmaven.repo.local` to every `mvn` invocation:
+
+```groovy
+// In environment block
+MAVEN_CACHE = "${env.HOME}/.m2/repository"
+```
+
+Applied to:
+- `mvn clean package -DskipTests ...` (Build All Services)
+- `mvn test -pl order-service ...` (Unit Test — order-service)
+- `mvn test -pl inventory-service ...` (Unit Test — inventory-service)
+- `mvn test -pl payment-service ...` (Unit Test — payment-service)
+- `mvn test -pl shipping-service ...` (Unit Test — shipping-service)
+- `mvn test -pl notification-service ...` (Unit Test — notification-service)
+- `mvn verify -pl karate-tests ...` (Karate API Tests)
+
+All 7 `mvn` calls now include `-Dmaven.repo.local=${MAVEN_CACHE}`.
+
+#### Status
+✅ Fix applied. Already present in `develop` Jenkinsfile.
+
+---
+
 ## Known Pending Items
 
-- The 6 downstream application services (`api-gateway`, `order-service`, `inventory-service`, `payment-service`, `shipping-service`, `notification-service`) still use `curl -sf` from the Jenkins host for their readiness checks. If those fail, the same `docker inspect` fix should be applied to all of them.
+- ~~The 6 downstream application services still use `curl -sf` from the Jenkins host for their readiness checks.~~ **Resolved** — all 6 now use `docker inspect` (same pattern as Eureka).
+- The Eureka REST API check requires `python3` to be available on the Jenkins agent. Confirm this is installed before the next pipeline run.
+- Karate test suite coverage and passing status on `develop` is unverified against the current infrastructure stack — next pipeline run will confirm.
 
 ---
 
@@ -79,4 +179,5 @@ Docker's verdict is authoritative and environment-agnostic — it runs inside th
 - All services run on a shared `ecommerce-network` Docker bridge network.
 - Eureka healthcheck has a `start_period: 60s` — Docker will not report `healthy` before 60 seconds have elapsed regardless of actual boot time.
 - The Jenkins agent must have Docker CLI access (`docker`, `docker compose`, `docker exec`, `docker inspect`) available on `PATH`.
-- `curl` must be installed on the Jenkins agent for the downstream service checks to work.
+- `python3` must be installed on the Jenkins agent (required for the Eureka REST API status check).
+- `curl` must be installed on the Jenkins agent for the Eureka REST API checks to work.
