@@ -193,7 +193,7 @@ pipeline {
                         until \
                             curl -sf \
                                 -H "Accept: application/json" \
-                                "http://localhost:8761/eureka/apps/${SVC}" \
+                                "http://eureka-server:8761/eureka/apps/${SVC}" \
                             | python3 -c "
 import sys, json
 try:
