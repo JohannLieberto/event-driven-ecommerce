@@ -17,7 +17,6 @@ pipeline {
         }
 
         stage('Build All Services') {
-            when { expression { return false } }
             steps {
                 echo '=== Building all microservices ==='
                 sh 'mvn clean package -DskipTests -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service'
@@ -25,7 +24,6 @@ pipeline {
         }
 
         stage('Unit Tests') {
-            when { expression { return false } }
             parallel {
                 stage('Test order-service') {
                     steps {
@@ -113,15 +111,18 @@ pipeline {
         stage('Start Infrastructure') {
             steps {
                 echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml up -d --build --no-recreate'
+                sh 'docker compose -f docker-compose.yml up -d --build'
 
-                echo '=== Waiting for all services to be healthy ==='
+                echo '=== Waiting for infrastructure to pass healthchecks ==='
+                sh 'docker compose -f docker-compose.yml wait --timeout 180 zookeeper kafka postgres eureka-server'
+
+                echo '=== Waiting for microservices to be healthy ==='
                 sh '''
-                    SERVICES="zookeeper kafka postgres eureka-server order-service inventory-service payment-service shipping-service notification-service api-gateway"
+                    SERVICES="order-service inventory-service payment-service shipping-service notification-service api-gateway"
                     for SERVICE in $SERVICES; do
                         echo "Waiting for $SERVICE..."
                         COUNT=0
-                        until [ "$(docker inspect --format='{{.State.Health.Status}}' $SERVICE 2>/dev/null)" = "healthy" ] || [ $COUNT -ge 36 ]; do
+                        until [ $(docker inspect --format="{{.State.Health.Status}}" $SERVICE 2>/dev/null) = "healthy" ] || [ $COUNT -ge 36 ]; do
                             echo "$SERVICE not ready yet... attempt $COUNT/36. Retrying in 5s."
                             sleep 5
                             COUNT=$((COUNT + 1))
