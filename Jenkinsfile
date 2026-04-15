@@ -151,7 +151,7 @@ pipeline {
                     echo "=== Waiting for Eureka Server ==="
                     RETRIES=24
                     COUNT=0
-                    until curl -sf http://localhost:8761/actuator/health >/dev/null 2>&1; do
+                    until docker inspect --format='{{.State.Health.Status}}' eureka-server 2>/dev/null | grep -q 'healthy'; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Eureka Server did not become ready. Aborting."
