@@ -181,9 +181,12 @@ pipeline {
                         echo "$svc is UP ✅"
                     done
 
+                    echo "=== Giving services 30s to complete Eureka registration ==="
+                    sleep 30
+
                     echo "=== Waiting for services to register in Eureka ==="
                     SERVICES="ORDER-SERVICE INVENTORY-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
-                    MAX_ATTEMPTS=20
+                    MAX_ATTEMPTS=30
                     for SVC in $SERVICES; do
                         COUNT=0
                         echo "Waiting for $SVC to appear in Eureka registry..."
