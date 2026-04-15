@@ -151,7 +151,7 @@ pipeline {
                     echo "=== Waiting for Eureka Server ==="
                     RETRIES=24
                     COUNT=0
-                    until curl -sf http://localhost:8761/actuator/health | grep -q "UP"; do
+                    until curl -sf http://localhost:8761/actuator/health >/dev/null 2>&1; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Eureka Server did not become ready. Aborting."
@@ -174,7 +174,7 @@ pipeline {
                         NAME=${svc%%:*}
                         URL=${svc#*:}
                         COUNT=0
-                        until curl -sf "$URL" | grep -q "UP" || [ $COUNT -ge 24 ]; do
+                        until curl -sf "$URL" >/dev/null 2>&1 || [ $COUNT -ge 24 ]; do
                             echo "$NAME not ready (attempt $((COUNT+1))/24)..."
                             COUNT=$((COUNT+1))
                             sleep 5

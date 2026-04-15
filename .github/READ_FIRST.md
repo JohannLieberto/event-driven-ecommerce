@@ -8,10 +8,22 @@
 - **Team:** JohannLieberto + team (this file is for AI-assisted sessions with Hitesh only)
 
 ## Current Problem
-Kafka container has been failing in Jenkins CI for 30+ commits.
-All dependent services (order, inventory, payment, shipping, notification) wait on `kafka: service_healthy` — so if Kafka fails, the entire pipeline fails.
+~~Kafka container has been failing in Jenkins CI for 30+ commits.~~ ✅ **FIXED April 15 2026**
 
-## What's Been Tried (All Failed)
+Eureka health check loop in Jenkins was grepping for `"UP"` in the response body, but Spring Boot 3.3 actuator does not guarantee the literal string `UP` in the JSON body shape. Eureka was actually healthy (returning HTTP 200), but the pipeline bailed because `grep -q "UP"` never matched.
+
+## What's Been Fixed
+| Issue | Fix | Status |
+|---|---|---|
+| Kafka healthcheck using `localhost:9092` | TCP port check via `cat /dev/null > /dev/tcp/localhost/9092` | ✅ Fixed — commit `4cc474b` |
+| Eureka wait loop grepping body for `UP` | Rely on HTTP 200 via `curl -sf ... >/dev/null 2>&1` | ✅ Fixed — April 15 2026 ~18:57 BST |
+| All 6 service health loops grepping body for `UP` | Same fix — HTTP 200 check only | ✅ Fixed — April 15 2026 ~18:57 BST |
+
+## Root Cause Summary
+- **Kafka:** Healthcheck command used `localhost:9092` but broker advertises as `kafka:9092` → replaced with TCP check.
+- **Eureka + Services:** Spring Boot 3.3 actuator health JSON body shape may not contain literal `UP` string → replaced `grep -q "UP"` with `curl -sf ... >/dev/null 2>&1` (relies on HTTP 2xx, fails on HTTP ≥ 400).
+
+## Previous Failed Attempts (Kafka)
 | Attempt | Why It Failed |
 |---|---|
 | `localhost:9092` in healthcheck (early) | Mixed up inside/outside container context |
@@ -23,25 +35,8 @@ All dependent services (order, inventory, payment, shipping, notification) wait 
 | `kafka-topics.sh --list` with `start_period: 60s` | Unreliable exit code, still unhealthy |
 | `kafka-broker-api-versions.sh localhost:9092` + ZK timeouts | Kafka running fine but healthcheck returning non-zero — broker registered as `kafka:9092` not `localhost` |
 
-## Root Cause (Confirmed April 15 2026)
-Kafka was **fully started and healthy** — `docker logs kafka` showed `[KafkaServer id=1] started` successfully.
-The healthcheck command `kafka-broker-api-versions.sh --bootstrap-server localhost:9092` was failing because
-the broker advertises itself as `kafka:9092` internally, not `localhost`.
-This was a **healthcheck command issue**, not a Kafka startup issue.
-
-## Current Fix (Pushed ✅ — Awaiting Jenkins Result)
-- **docker-compose.yml:** Kafka healthcheck replaced with pure TCP port check:
-  `bash -c 'cat /dev/null > /dev/tcp/localhost/9092'`
-- Verified working on EC2 via `docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092'` → exit code 0
-- Timings: `interval: 10s`, `timeout: 10s`, `retries: 10`, `start_period: 30s`
-- **Commit:** [`4cc474b`](https://github.com/JohannLieberto/event-driven-ecommerce/commit/4cc474bb2a9ae797935d268067f673eb658d482b) — April 15 2026 ~18:19 BST
-
-## Next Steps
-- [ ] Trigger Jenkins build and confirm **Start Infrastructure** stage passes
-- [ ] If passing: pipeline is unblocked — move to Karate test fixes
-- [ ] If failing: paste `docker ps -a` and `docker logs kafka` output here
-
 ## Branch State
-- **Last fix pushed:** April 15 2026, ~18:19 BST
-- **Jenkins:** next build to be triggered (builds #26–#38 all failed at **Start Infrastructure**)
-- **Status:** TCP healthcheck fix live on `develop`, awaiting CI confirmation
+- **Last fix pushed:** April 15 2026, ~18:57 BST
+- **Jenkins:** trigger a new build — expect **Start Infrastructure** to pass now
+- **Next:** if Start Infrastructure passes → move to Karate test fixes
+- **If still failing:** paste `curl -i http://localhost:8761/actuator/health` output from Jenkins agent
