@@ -112,11 +112,8 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Tearing down any stale containers from previous runs ==='
-                sh 'docker compose -f docker-compose.yml down -v || true'
-
                 echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml up -d --build'
+                sh 'docker compose -f docker-compose.yml up -d --build --no-recreate'
 
                 echo '=== Waiting for all services to be healthy ==='
                 sh '''
