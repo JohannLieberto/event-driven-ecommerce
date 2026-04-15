@@ -115,21 +115,6 @@ pipeline {
 
                 echo '=== Waiting for infrastructure to be ready ==='
                 sh '''
-                    echo "=== Waiting for Zookeeper ==="
-                    RETRIES=20
-                    COUNT=0
-                    until docker exec zookeeper bash -c "echo ruok | nc localhost 2181 | grep imok" >/dev/null 2>&1; do
-                        COUNT=$((COUNT+1))
-                        if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Zookeeper did not become ready. Aborting."
-                            docker compose -f docker-compose.yml logs zookeeper
-                            exit 1
-                        fi
-                        echo "Zookeeper not ready yet... $COUNT/$RETRIES. Retrying in 3s."
-                        sleep 3
-                    done
-                    echo "Zookeeper is ready ✅"
-
                     echo "=== Waiting for Kafka ==="
                     RETRIES=36
                     COUNT=0
