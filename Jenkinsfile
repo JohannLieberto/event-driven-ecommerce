@@ -121,7 +121,7 @@ pipeline {
                     echo "=== Waiting for Kafka ==="
                     RETRIES=36
                     COUNT=0
-                    until docker exec kafka kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1; do
+                    until docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092' >/dev/null 2>&1; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
