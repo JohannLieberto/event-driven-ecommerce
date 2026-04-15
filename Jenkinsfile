@@ -110,6 +110,9 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
+                echo '=== Cleaning up any previous Docker Compose state ==='
+                sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
+
                 echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
                 sh 'docker compose -f docker-compose.yml up -d --build'
 
@@ -118,7 +121,7 @@ pipeline {
                     echo "=== Waiting for Kafka ==="
                     RETRIES=36
                     COUNT=0
-                    until docker exec kafka kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do
+                    until docker exec kafka kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
