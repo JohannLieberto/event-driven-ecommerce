@@ -131,7 +131,7 @@ pipeline {
                         echo "Kafka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
                         sleep 5
                     done
-                    echo "Kafka is ready \u2705"
+                    echo "Kafka is ready ✅"
 
                     echo "=== Waiting for Postgres ==="
                     RETRIES=20
@@ -146,7 +146,7 @@ pipeline {
                         echo "Postgres not ready yet... $COUNT/$RETRIES. Retrying in 3s."
                         sleep 3
                     done
-                    echo "Postgres is ready \u2705"
+                    echo "Postgres is ready ✅"
 
                     echo "=== Waiting for Eureka Server ==="
                     RETRIES=24
@@ -161,7 +161,7 @@ pipeline {
                         echo "Eureka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
                         sleep 5
                     done
-                    echo "Eureka is ready \u2705"
+                    echo "Eureka is ready ✅"
 
                     echo "=== Waiting for Application Services ==="
                     for svc in api-gateway order-service inventory-service payment-service shipping-service notification-service; do
@@ -177,10 +177,10 @@ pipeline {
                             echo "$svc not ready (attempt $COUNT/$RETRIES)..."
                             sleep 5
                         done
-                        echo "$svc is UP \u2705"
+                        echo "$svc is UP ✅"
                     done
 
-                    echo "=== All Services Ready \u2705 ==="
+                    echo "=== All Services Ready ✅ ==="
                 '''
             }
         }
@@ -188,11 +188,11 @@ pipeline {
         stage('Karate API Tests') {
             steps {
                 echo '=== Running Karate API and E2E tests ==='
-                sh 'mvn test -pl karate-tests -Dkarate.env=ci'
+                sh 'mvn verify -pl karate-tests -Dkarate.env=ci -Dskip.karate=false'
             }
             post {
                 always {
-                    junit 'karate-tests/target/surefire-reports/*.xml'
+                    junit 'karate-tests/target/failsafe-reports/*.xml'
                     publishHTML(target: [
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
