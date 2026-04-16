@@ -111,18 +111,34 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
-                echo '=== Cleaning up any previous Docker Compose state ==='
-                sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
+                echo '=== Checking existing container health before starting infrastructure ==='
+                sh '''
+                    start_if_needed() {
+                        SVC="$1"
+                        STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$SVC" 2>/dev/null || echo "missing")
+                        if [ "$STATUS" = "healthy" ]; then
+                            echo "$SVC is already healthy — skipping startup ✅"
+                        else
+                            echo "$SVC is not healthy (status: $STATUS) — will start/rebuild"
+                        fi
+                    }
 
-                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml up -d --build'
+                    for SVC in zookeeper kafka kafka-ui postgres eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service; do
+                        start_if_needed "$SVC"
+                    done
+
+                    # Only bring up containers that are missing or unhealthy
+                    # --no-recreate ensures healthy containers are left completely untouched
+                    echo "=== Starting any missing or unhealthy services ==="
+                    docker compose -f docker-compose.yml up -d --build --no-recreate
+                '''
 
                 echo '=== Waiting for infrastructure to be ready ==='
                 sh '''
                     echo "=== Waiting for Kafka ==="
                     RETRIES=36
                     COUNT=0
-                    until docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092' >/dev/null 2>&1; do
+                    until docker exec kafka bash -c \'cat /dev/null > /dev/tcp/localhost/9092\' >/dev/null 2>&1; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
@@ -152,7 +168,7 @@ pipeline {
                     echo "=== Waiting for Eureka Server ==="
                     RETRIES=40
                     COUNT=0
-                    until docker inspect --format='{{.State.Health.Status}}' eureka-server 2>/dev/null | grep -q 'healthy'; do
+                    until docker inspect --format=\'{{.State.Health.Status}}\' eureka-server 2>/dev/null | grep -q \'healthy\'; do
                         COUNT=$((COUNT+1))
                         if [ $COUNT -ge $RETRIES ]; then
                             echo "ERROR: Eureka Server did not become ready. Aborting."
@@ -168,7 +184,7 @@ pipeline {
                     for svc in api-gateway order-service inventory-service payment-service shipping-service notification-service; do
                         COUNT=0
                         RETRIES=40
-                        until docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null | grep -q 'healthy'; do
+                        until docker inspect --format=\'{{.State.Health.Status}}\' "$svc" 2>/dev/null | grep -q \'healthy\'; do
                             COUNT=$((COUNT+1))
                             if [ $COUNT -ge $RETRIES ]; then
                                 echo "ERROR: $svc did not become healthy after $((RETRIES * 5))s. Aborting."
@@ -181,12 +197,9 @@ pipeline {
                         echo "$svc is UP ✅"
                     done
 
-                    echo "=== Giving services 30s to complete Eureka registration ==="
-                    sleep 30
-
                     echo "=== Waiting for services to register in Eureka ==="
                     SERVICES="ORDER-SERVICE INVENTORY-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
-                    MAX_ATTEMPTS=10
+                    MAX_ATTEMPTS=8
                     for SVC in $SERVICES; do
                         COUNT=0
                         echo "Waiting for $SVC to appear in Eureka registry..."
@@ -198,11 +211,11 @@ pipeline {
 import sys, json
 try:
     d = json.load(sys.stdin)
-    instances = d.get('application', {}).get('instance', [])
+    instances = d.get(\'application\', {}).get(\'instance\', [])
     if isinstance(instances, dict):
         instances = [instances]
     for inst in instances:
-        if inst.get('status') == 'UP':
+        if inst.get(\'status\') == \'UP\':
             sys.exit(0)
     sys.exit(1)
 except Exception:
@@ -210,12 +223,12 @@ except Exception:
 " 2>/dev/null; do
                             COUNT=$((COUNT+1))
                             if [ $COUNT -ge $MAX_ATTEMPTS ]; then
-                                echo "ERROR: $SVC did not register in Eureka after $((MAX_ATTEMPTS * 15))s. Aborting."
+                                echo "ERROR: $SVC did not register in Eureka after $((MAX_ATTEMPTS * 10))s. Aborting."
                                 docker compose -f docker-compose.yml logs eureka-server
                                 exit 1
                             fi
-                            echo "$SVC not in Eureka yet... $COUNT/$MAX_ATTEMPTS. Retrying in 15s."
-                            sleep 15
+                            echo "$SVC not in Eureka yet... $COUNT/$MAX_ATTEMPTS. Retrying in 10s."
+                            sleep 10
                         done
                         echo "$SVC registered in Eureka ✅"
                     done
@@ -242,13 +255,6 @@ except Exception:
                         reportName: 'Karate Test Report'
                     ])
                 }
-            }
-        }
-
-        stage('Stop Infrastructure') {
-            steps {
-                echo '=== Tearing down Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml down -v'
             }
         }
 
@@ -303,11 +309,12 @@ except Exception:
 
     post {
         success {
-            echo '=== Pipeline PASSED ==='
+            echo '=== Pipeline PASSED — containers left running for next build ==='
         }
         failure {
-            echo '=== Pipeline FAILED - check logs above ==='
+            echo '=== Pipeline FAILED - dumping logs and tearing down ==='
             sh 'docker compose -f docker-compose.yml logs --tail=50 || true'
+            sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
         }
         always {
             cleanWs()

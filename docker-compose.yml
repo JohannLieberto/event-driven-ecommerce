@@ -91,10 +91,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 90s
+      start_period: 60s
 
   api-gateway:
     build:
@@ -113,10 +113,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
   order-service:
     build:
@@ -140,10 +140,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
   inventory-service:
     build:
@@ -167,10 +167,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
   payment-service:
     build:
@@ -194,10 +194,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
   shipping-service:
     build:
@@ -221,10 +221,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
   notification-service:
     build:
@@ -248,10 +248,10 @@ services:
       - ecommerce-network
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8086/actuator/health >/dev/null 2>&1"]
-      interval: 15s
+      interval: 10s
       timeout: 10s
       retries: 8
-      start_period: 100s
+      start_period: 45s
 
 volumes:
   postgres-data:
