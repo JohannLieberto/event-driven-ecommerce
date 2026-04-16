@@ -158,12 +158,11 @@ pipeline {
 
                 echo '=== Waiting for all services to be healthy and registered in Eureka ==='
                 sh '''
-                    wait_for_health() {
+                    wait_for_healthy() {
                         local NAME=$1
-                        local URL=$2
-                        local RETRIES=40
+                        local RETRIES=48
                         local COUNT=0
-                        until wget -qO- "$URL" >/dev/null 2>&1; do
+                        until [ "$(docker inspect --format="{{.State.Health.Status}}" "$NAME" 2>/dev/null)" = "healthy" ]; do
                             COUNT=$((COUNT+1))
                             if [ $COUNT -ge $RETRIES ]; then
                                 echo "ERROR: $NAME did not become healthy after $((RETRIES * 5))s"
@@ -176,30 +175,36 @@ pipeline {
                         echo "$NAME is ready ✅"
                     }
 
-                    wait_for_health eureka-server   http://172.17.0.1:8761/actuator/health
-                    wait_for_health api-gateway     http://172.17.0.1:8088/actuator/health
-                    wait_for_health order-service   http://172.17.0.1:8081/actuator/health
-                    wait_for_health inventory-service http://172.17.0.1:8083/actuator/health
-                    wait_for_health payment-service http://172.17.0.1:8084/actuator/health
-                    wait_for_health shipping-service http://172.17.0.1:8085/actuator/health
-                    wait_for_health notification-service http://172.17.0.1:8086/actuator/health
+                    wait_for_healthy eureka-server
+                    wait_for_healthy api-gateway
+                    wait_for_healthy order-service
+                    wait_for_healthy inventory-service
+                    wait_for_healthy payment-service
+                    wait_for_healthy shipping-service
+                    wait_for_healthy notification-service
 
-                    echo "=== All services healthy. Waiting 20s for Eureka discovery propagation ==="
-                    sleep 20
+                    echo "=== Verifying gateway routing for all services (replaces fixed sleep) ==="
+                    verify_route() {
+                        local SVC=$1
+                        local PATH=$2
+                        local RETRIES=24
+                        local COUNT=0
+                        until docker exec api-gateway wget -qO- "http://localhost:8080${PATH}" >/dev/null 2>&1; do
+                            COUNT=$((COUNT+1))
+                            if [ $COUNT -ge $RETRIES ]; then
+                                echo "ERROR: Gateway cannot route to $SVC after $((RETRIES * 5))s"
+                                exit 1
+                            fi
+                            echo "Gateway -> $SVC not ready yet... $COUNT/$RETRIES"
+                            sleep 5
+                        done
+                        echo "Gateway -> $SVC routing verified ✅"
+                    }
 
-                    echo "=== Verifying gateway can route to services ==="
-                    RETRIES=12
-                    COUNT=0
-                    until wget -qO- http://172.17.0.1:8088/api/orders/health >/dev/null 2>&1; do
-                        COUNT=$((COUNT+1))
-                        if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Gateway cannot route to order-service after Eureka wait"
-                            exit 1
-                        fi
-                        echo "Gateway routing not ready yet... $COUNT/$RETRIES"
-                        sleep 5
-                    done
-                    echo "Gateway routing verified ✅"
+                    verify_route order-service     /api/orders/health
+                    verify_route inventory-service /api/inventory/health
+                    verify_route payment-service   /api/payments/health
+                    verify_route shipping-service  /api/shipments/health
                 '''
             }
         }
