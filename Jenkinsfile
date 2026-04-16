@@ -133,7 +133,7 @@ pipeline {
 set -e
 RETRIES=36
 COUNT=0
-until docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092' >/dev/null 2>&1; do
+until docker exec kafka sh -c "cat /dev/null > /dev/tcp/localhost/9092" >/dev/null 2>&1; do
     COUNT=$((COUNT+1))
     if [ $COUNT -ge $RETRIES ]; then
         echo "ERROR: Kafka did not become ready after 180 seconds. Aborting."
@@ -246,9 +246,6 @@ verify_route shipping-service  /api/shipments/health
         }
 
         stage('Docker Build & Push') {
-            when {
-                branch 'main'
-            }
             steps {
                 echo '=== Building and pushing Docker images to DockerHub ==='
                 script {
@@ -266,6 +263,32 @@ verify_route shipping-service  /api/shipments/health
                         sh "#!/bin/sh\ndocker build -f shipping-service/Dockerfile -t ${DOCKER_REGISTRY}/shipping-service:${BUILD_NUMBER} . && docker tag ${DOCKER_REGISTRY}/shipping-service:${BUILD_NUMBER} ${DOCKER_REGISTRY}/shipping-service:latest && docker push ${DOCKER_REGISTRY}/shipping-service:${BUILD_NUMBER} && docker push ${DOCKER_REGISTRY}/shipping-service:latest"
                         sh "#!/bin/sh\ndocker build -f notification-service/Dockerfile -t ${DOCKER_REGISTRY}/notification-service:${BUILD_NUMBER} . && docker tag ${DOCKER_REGISTRY}/notification-service:${BUILD_NUMBER} ${DOCKER_REGISTRY}/notification-service:latest && docker push ${DOCKER_REGISTRY}/notification-service:${BUILD_NUMBER} && docker push ${DOCKER_REGISTRY}/notification-service:latest"
                     }
+                }
+            }
+        }
+
+        stage('Pull & Run from DockerHub') {
+            steps {
+                echo '=== Pulling latest images from DockerHub and starting containers ==='
+                sh '''#!/bin/sh
+set -e
+docker pull hiteshkhade/eureka-server:latest
+docker pull hiteshkhade/api-gateway:latest
+docker pull hiteshkhade/order-service:latest
+docker pull hiteshkhade/inventory-service:latest
+docker pull hiteshkhade/payment-service:latest
+docker pull hiteshkhade/shipping-service:latest
+docker pull hiteshkhade/notification-service:latest
+echo "All images pulled successfully"
+'''
+                withCredentials([string(credentialsId: 'jwt-secret', variable: 'JWT_SECRET')]) {
+                    sh '''#!/bin/sh
+set -e
+echo "=== Starting containers from pulled DockerHub images ==="
+docker compose -f docker-compose.yml up -d --no-build
+echo "=== Containers started ==="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+'''
                 }
             }
         }
