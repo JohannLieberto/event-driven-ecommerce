@@ -8,3 +8,4 @@ Feature: Authentication
     Then status 200
     And match response.token == '#string'
     * def authToken = response.token
+    * karate.set('authToken', authToken)
