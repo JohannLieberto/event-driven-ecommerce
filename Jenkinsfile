@@ -270,40 +270,6 @@ verify_route shipping-service  /api/shipments/health
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            when {
-                branch 'main'
-            }
-            steps {
-                echo '=== Deploying to Kubernetes ==='
-                sh '''#!/bin/sh
-set -e
-
-# Apply all manifests (creates namespace, deployments, services, configmaps)
-kubectl apply -f k8s/
-
-# Update image for every service to the current build
-kubectl set image deployment/eureka-server     eureka-server=${DOCKER_REGISTRY}/eureka-server:${BUILD_NUMBER}         -n ecommerce
-kubectl set image deployment/api-gateway       api-gateway=${DOCKER_REGISTRY}/api-gateway:${BUILD_NUMBER}             -n ecommerce
-kubectl set image deployment/order-service     order-service=${DOCKER_REGISTRY}/order-service:${BUILD_NUMBER}         -n ecommerce
-kubectl set image deployment/inventory-service inventory-service=${DOCKER_REGISTRY}/inventory-service:${BUILD_NUMBER} -n ecommerce
-kubectl set image deployment/payment-service   payment-service=${DOCKER_REGISTRY}/payment-service:${BUILD_NUMBER}     -n ecommerce
-kubectl set image deployment/shipping-service  shipping-service=${DOCKER_REGISTRY}/shipping-service:${BUILD_NUMBER}   -n ecommerce
-kubectl set image deployment/notification-service notification-service=${DOCKER_REGISTRY}/notification-service:${BUILD_NUMBER} -n ecommerce
-
-# Wait for every deployment to finish rolling out
-kubectl rollout status deployment/eureka-server     -n ecommerce --timeout=120s
-kubectl rollout status deployment/api-gateway       -n ecommerce --timeout=120s
-kubectl rollout status deployment/order-service     -n ecommerce --timeout=120s
-kubectl rollout status deployment/inventory-service -n ecommerce --timeout=120s
-kubectl rollout status deployment/payment-service   -n ecommerce --timeout=120s
-kubectl rollout status deployment/shipping-service  -n ecommerce --timeout=120s
-kubectl rollout status deployment/notification-service -n ecommerce --timeout=120s
-
-echo "=== All deployments rolled out successfully ==="
-'''
-            }
-        }
     }
 
     post {
