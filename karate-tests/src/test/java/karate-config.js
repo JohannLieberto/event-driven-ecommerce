@@ -22,13 +22,15 @@ function fn() {
   }
 
   if (env === 'ci') {
-    // Jenkins agent runs on the host — use localhost with Docker-mapped ports
-    config.gatewayUrl = 'http://localhost:8088';
-    config.orderServiceUrl = 'http://localhost:8081';
-    config.paymentServiceUrl = 'http://localhost:8084';
-    config.inventoryServiceUrl = 'http://localhost:8083';
-    config.shippingServiceUrl = 'http://localhost:8085';
-    config.notificationServiceUrl = 'http://localhost:8086';
+    // Jenkins runs inside a container on the bridge network (172.17.0.2)
+    // localhost inside Jenkins resolves to the Jenkins container, not the host
+    // Use 172.17.0.1 (Docker bridge gateway) to reach host-mapped ports
+    config.gatewayUrl = 'http://172.17.0.1:8088';
+    config.orderServiceUrl = 'http://172.17.0.1:8081';
+    config.paymentServiceUrl = 'http://172.17.0.1:8084';
+    config.inventoryServiceUrl = 'http://172.17.0.1:8083';
+    config.shippingServiceUrl = 'http://172.17.0.1:8085';
+    config.notificationServiceUrl = 'http://172.17.0.1:8086';
   }
 
   return config;
