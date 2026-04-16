@@ -117,12 +117,11 @@ pipeline {
                 echo '=== Cleaning up any previous Docker Compose state ==='
                 sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
 
-                echo '=== Starting Kafka, Postgres, Zookeeper and all services via Docker Compose ==='
+                echo '=== Starting all services via Docker Compose ==='
                 sh 'docker compose -f docker-compose.yml up -d --build'
 
-                echo '=== Waiting for infrastructure to be ready ==='
+                echo '=== Waiting for Kafka ==='
                 sh '''
-                    echo "=== Waiting for Kafka ==="
                     RETRIES=36
                     COUNT=0
                     until docker exec kafka bash -c 'cat /dev/null > /dev/tcp/localhost/9092' >/dev/null 2>&1; do
@@ -136,8 +135,10 @@ pipeline {
                         sleep 5
                     done
                     echo "Kafka is ready ✅"
+                '''
 
-                    echo "=== Waiting for Postgres ==="
+                echo '=== Waiting for Postgres ==='
+                sh '''
                     RETRIES=20
                     COUNT=0
                     until docker exec postgres pg_isready -U postgres >/dev/null 2>&1; do
@@ -151,75 +152,10 @@ pipeline {
                         sleep 3
                     done
                     echo "Postgres is ready ✅"
-
-                    echo "=== Waiting for Eureka Server ==="
-                    RETRIES=40
-                    COUNT=0
-                    until docker inspect --format='{{.State.Health.Status}}' eureka-server 2>/dev/null | grep -q 'healthy'; do
-                        COUNT=$((COUNT+1))
-                        if [ $COUNT -ge $RETRIES ]; then
-                            echo "ERROR: Eureka Server did not become ready. Aborting."
-                            docker compose -f docker-compose.yml logs eureka-server
-                            exit 1
-                        fi
-                        echo "Eureka not ready yet... $COUNT/$RETRIES. Retrying in 5s."
-                        sleep 5
-                    done
-                    echo "Eureka is ready ✅"
-
-                    echo "=== Waiting for Application Services ==="
-                    for svc in api-gateway order-service inventory-service payment-service shipping-service notification-service; do
-                        COUNT=0
-                        RETRIES=40
-                        until docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null | grep -q 'healthy'; do
-                            COUNT=$((COUNT+1))
-                            if [ $COUNT -ge $RETRIES ]; then
-                                echo "ERROR: $svc did not become healthy after $((RETRIES * 5))s. Aborting."
-                                docker compose -f docker-compose.yml logs "$svc"
-                                exit 1
-                            fi
-                            echo "$svc not ready (attempt $COUNT/$RETRIES)..."
-                            sleep 5
-                        done
-                        echo "$svc is UP ✅"
-                    done
-
-                    echo "=== Giving services 30s to complete Eureka registration ==="
-                    sleep 30
-
-                    echo "=== Waiting for services to register in Eureka ==="
-                    SERVICES="INVENTORY-SERVICE ORDER-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
-                    MAX_ATTEMPTS=20
-                    for SVC in $SERVICES; do
-                        COUNT=0
-                        echo "Waiting for $SVC to appear in Eureka registry..."
-                        until \
-                            curl -sf \
-                                -H "Accept: application/json" \
-                                "http://13.63.117.255:8761/eureka/apps/${SVC}" \
-                            | python3 -c "
-import sys, json
-try:
-    d = json.load(sys.stdin)
-    status = d['application']['instance'][0]['status']
-    sys.exit(0 if status == 'UP' else 1)
-except Exception:
-    sys.exit(1)
-" 2>/dev/null; do
-                            COUNT=$((COUNT+1))
-                            if [ $COUNT -ge $MAX_ATTEMPTS ]; then
-                                echo "ERROR: $SVC did not register in Eureka after $((MAX_ATTEMPTS * 15))s. Aborting."
-                                docker compose -f docker-compose.yml logs eureka-server
-                                exit 1
-                            fi
-                            echo "$SVC not in Eureka yet... $COUNT/$MAX_ATTEMPTS. Retrying in 15s."
-                            sleep 15
-                        done
-                        echo "$SVC registered in Eureka ✅"
-                    done
-
-                    echo "=== All Services Ready ✅ ==="
                 '''
+
+                echo '=== Waiting 60s for services to be ready before Karate tests ==='
+                sh 'sleep 60'
             }
         }
 
