@@ -150,7 +150,7 @@ pipeline {
                     echo "Postgres is ready ✅"
 
                     echo "=== Waiting for Eureka Server ==="
-                    RETRIES=24
+                    RETRIES=40
                     COUNT=0
                     until docker inspect --format='{{.State.Health.Status}}' eureka-server 2>/dev/null | grep -q 'healthy'; do
                         COUNT=$((COUNT+1))
@@ -167,7 +167,7 @@ pipeline {
                     echo "=== Waiting for Application Services ==="
                     for svc in api-gateway order-service inventory-service payment-service shipping-service notification-service; do
                         COUNT=0
-                        RETRIES=24
+                        RETRIES=40
                         until docker inspect --format='{{.State.Health.Status}}' "$svc" 2>/dev/null | grep -q 'healthy'; do
                             COUNT=$((COUNT+1))
                             if [ $COUNT -ge $RETRIES ]; then
@@ -186,7 +186,7 @@ pipeline {
 
                     echo "=== Waiting for services to register in Eureka ==="
                     SERVICES="ORDER-SERVICE INVENTORY-SERVICE PAYMENT-SERVICE SHIPPING-SERVICE NOTIFICATION-SERVICE"
-                    MAX_ATTEMPTS=30
+                    MAX_ATTEMPTS=10
                     for SVC in $SERVICES; do
                         COUNT=0
                         echo "Waiting for $SVC to appear in Eureka registry..."
