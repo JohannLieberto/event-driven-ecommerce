@@ -3,6 +3,7 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY shipping-service/pom.xml shipping-service/pom.xml
+RUN mvn -f shipping-service/pom.xml dependency:go-offline -B
 COPY shipping-service/src shipping-service/src
 RUN mvn -f shipping-service/pom.xml package -DskipTests
 
@@ -11,4 +12,4 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/shipping-service/target/shipping-service-*.jar app.jar
 EXPOSE 8085
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

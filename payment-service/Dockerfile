@@ -3,6 +3,7 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY payment-service/pom.xml payment-service/pom.xml
+RUN mvn -f payment-service/pom.xml dependency:go-offline -B
 COPY payment-service/src payment-service/src
 RUN mvn -f payment-service/pom.xml package -DskipTests
 
@@ -11,4 +12,4 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/payment-service/target/payment-service-*.jar app.jar
 EXPOSE 8084
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
