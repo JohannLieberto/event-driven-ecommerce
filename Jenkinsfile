@@ -118,7 +118,9 @@ pipeline {
                 sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
 
                 echo '=== Starting all services via Docker Compose ==='
-                sh 'docker compose -f docker-compose.yml up -d --build'
+                withCredentials([string(credentialsId: 'jwt-secret', variable: 'JWT_SECRET')]) {
+                    sh 'docker compose -f docker-compose.yml up -d --build'
+                }
 
                 echo '=== Waiting for Kafka ==='
                 sh '''
