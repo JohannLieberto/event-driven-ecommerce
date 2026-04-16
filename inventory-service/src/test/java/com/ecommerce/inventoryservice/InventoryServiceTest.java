@@ -16,7 +16,12 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+                "spring.kafka.listener.auto-startup=false"
+        }
+)
 @ActiveProfiles("test")
 class InventoryServiceTest {
 

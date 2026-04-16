@@ -10,6 +10,7 @@ spring:
       ddl-auto: create-drop
     show-sql: false
     database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
 
   h2:
     console:
@@ -19,17 +20,23 @@ spring:
     listener:
       auto-startup: false
 
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
-
   cloud:
     config:
       enabled: false
       import-check:
         enabled: false
+  config:
+    import: "optional:configserver:"
+
+# Top-level autoconfigure exclusion - this is the correct location
+autoconfigure:
+  exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 
 eureka:
   client:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+
+server:
+  port: 0

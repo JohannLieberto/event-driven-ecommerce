@@ -17,7 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+                "spring.kafka.listener.auto-startup=false"
+        }
+)
 @ActiveProfiles("test")
 class StockReservationTest {
 
@@ -49,7 +54,6 @@ class StockReservationTest {
         StockReservationRequest request = new StockReservationRequest();
         request.setQuantity(10);
 
-        // Fixed S5778: only the single throwing invocation inside assertThrows
         assertThrows(InsufficientStockException.class,
                 () -> inventoryService.reserveStock(product.getId(), request));
     }
