@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .pathMatchers("/public/**").permitAll()
+                        .pathMatchers("/api/*/health").permitAll()
                         .anyExchange().authenticated()
                 )
                 .build();
