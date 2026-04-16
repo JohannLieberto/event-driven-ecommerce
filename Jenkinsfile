@@ -186,10 +186,10 @@ pipeline {
                     echo "=== Verifying gateway routing for all services (replaces fixed sleep) ==="
                     verify_route() {
                         local SVC=$1
-                        local PATH=$2
+                        local ROUTE=$2
                         local RETRIES=24
                         local COUNT=0
-                        until docker exec api-gateway wget -qO- "http://localhost:8080${PATH}" >/dev/null 2>&1; do
+                        until docker exec api-gateway wget -qO- "http://localhost:8080${ROUTE}" >/dev/null 2>&1; do
                             COUNT=$((COUNT+1))
                             if [ $COUNT -ge $RETRIES ]; then
                                 echo "ERROR: Gateway cannot route to $SVC after $((RETRIES * 5))s"
