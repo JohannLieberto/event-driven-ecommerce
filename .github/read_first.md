@@ -4,6 +4,48 @@ This document tracks known issues, applied fixes, and important context for the 
 
 ---
 
+## AI Agent Rules
+
+> **Read this entire file before touching any file in this repo.**
+> This is not optional — skipping it causes regression loops.
+
+### Rules for any AI assistant working in this repo
+
+1. **Read this file first, always.** Even if you think you know what to do from the user's message. The fix history section documents problems that look unsolved but already are. Acting without reading causes regressions.
+
+2. **Read the target file before editing it.** Use the GitHub MCP tool (or equivalent) to fetch the current content and SHA before writing. Never write from memory or from what the user pastes — the file on the branch is the source of truth.
+
+3. **Cross-reference the fix history before applying any fix.** If the user asks you to add a healthcheck, a `depends_on`, a readiness check, or a Maven flag — search the Fix History section below first. The thing they're asking for may already be done.
+
+4. **Never use `curl` in Docker healthchecks or Jenkinsfile readiness loops.** `curl` has been proven unreliable in this repo's Jenkins agent context (see `[2026-04-15]` entry below). Use `wget` inside containers. Use `docker inspect` from the Jenkins host.
+
+5. **Never re-add `curl -sf` readiness loops to the Jenkinsfile.** The pattern was replaced with `docker inspect --format='{{.State.Health.Status}}'` in commit `897b742`. This is intentional and must not be reverted.
+
+6. **Confirm before pushing.** Tell the user exactly what file(s) you will change, what you will add/remove/replace, and why — before writing anything. Wait for explicit confirmation.
+
+7. **Update this file when you complete a fix.** Add a dated entry to the Fix History section and update the Known Pending Items section. This keeps the next AI (or human) informed from a cold start.
+
+8. **Document every assumption you verify.** If you read a file and confirm it is already correct, say so and log it here. "I checked and it was already done" is valuable information — it prevents the next session from re-investigating.
+
+### How to resume a session from scratch
+
+If you are a new AI instance starting fresh, do this in order:
+1. Read `.github/read_first.md` (this file) — full file, not a summary.
+2. Read `Jenkinsfile` on `develop` — understand the current pipeline stages and readiness check patterns.
+3. Read `docker-compose.yml` on `develop` — understand the current healthcheck state of every service.
+4. Check the **Known Pending Items** section at the bottom of this file.
+5. Ask the user what they want to work on today. You now have full context.
+
+### Current state snapshot (as of 2026-04-16)
+
+| File | State | Notes |
+|---|---|---|
+| `docker-compose.yml` | ✅ Complete | All 9 services have healthchecks. All 5 app services + api-gateway have correct `depends_on` with `service_healthy`. Uses `wget` throughout — do NOT change to `curl`. |
+| `Jenkinsfile` | ✅ Complete | `docker inspect` readiness pattern on all services. Eureka REST API check with `python3`. `MAVEN_CACHE` on all 7 `mvn` calls. |
+| `.github/read_first.md` | ✅ Up to date | Last audited 2026-04-16. |
+
+---
+
 ## Pipeline Overview
 
 | Stage | Tool | Notes |
@@ -19,6 +61,57 @@ This document tracks known issues, applied fixes, and important context for the 
 ---
 
 ## Fix History
+
+### [2026-04-16] Healthcheck & depends_on Audit — All Services Confirmed Correct
+
+**Branch:** `develop`
+**Triggered by:** User asked to add a healthcheck to `order-service` and check `depends_on` conditions.
+
+#### Investigation
+
+Read `docker-compose.yml` on `develop` directly via GitHub API before making any changes. Confirmed the following were already present and correct:
+
+**Healthchecks (all using `wget`, not `curl`):**
+
+| Service | Port | healthcheck present | test command |
+|---|---|---|---|
+| `kafka` | 9092 | ✅ | `bash -c 'cat /dev/null > /dev/tcp/localhost/9092'` |
+| `postgres` | 5432 | ✅ | `pg_isready -U postgres` |
+| `eureka-server` | 8761 | ✅ | `wget -qO- http://localhost:8761/actuator/health` |
+| `api-gateway` | 8080 | ✅ | `wget -qO- http://localhost:8080/actuator/health` |
+| `order-service` | 8081 | ✅ | `wget -qO- http://localhost:8081/actuator/health` |
+| `inventory-service` | 8083 | ✅ | `wget -qO- http://localhost:8083/actuator/health` |
+| `payment-service` | 8084 | ✅ | `wget -qO- http://localhost:8084/actuator/health` |
+| `shipping-service` | 8085 | ✅ | `wget -qO- http://localhost:8085/actuator/health` |
+| `notification-service` | 8086 | ✅ | `wget -qO- http://localhost:8086/actuator/health` |
+
+All application services use `interval: 15s`, `timeout: 10s`, `retries: 8`, `start_period: 100s`.
+
+**depends_on conditions:**
+
+| Service | Waits for | Condition |
+|---|---|---|
+| `kafka` | `zookeeper` | `service_started` |
+| `kafka-ui` | `kafka` | `service_healthy` |
+| `api-gateway` | `eureka-server` | `service_healthy` |
+| `order-service` | `postgres`, `kafka`, `eureka-server` | `service_healthy` (all three) |
+| `inventory-service` | `postgres`, `kafka`, `eureka-server` | `service_healthy` (all three) |
+| `payment-service` | `postgres`, `kafka`, `eureka-server` | `service_healthy` (all three) |
+| `shipping-service` | `postgres`, `kafka`, `eureka-server` | `service_healthy` (all three) |
+| `notification-service` | `postgres`, `kafka`, `eureka-server` | `service_healthy` (all three) |
+
+#### Decision
+
+No changes made to `docker-compose.yml`. It is fully correct. Changing it would be a regression risk.
+
+The user's request described adding a `curl`-based healthcheck. That was **not applied** because:
+1. The healthcheck already exists using `wget` (correct tool for this repo).
+2. `curl` was explicitly ruled out in the `[2026-04-15]` fix below.
+
+#### Status
+✅ Audit complete. No file changes needed. `docker-compose.yml` is authoritative and complete.
+
+---
 
 ### [2026-04-15] Eureka Server Readiness Check — `curl` → `docker inspect`
 
