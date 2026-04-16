@@ -193,13 +193,18 @@ pipeline {
                         until \
                             curl -sf \
                                 -H "Accept: application/json" \
-                                "http://172.17.0.1:8761/eureka/apps/${SVC}" \
+                                "http://localhost:8761/eureka/apps/${SVC}" \
                             | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
-    status = d['application']['instance'][0]['status']
-    sys.exit(0 if status == 'UP' else 1)
+    instances = d.get('application', {}).get('instance', [])
+    if isinstance(instances, dict):
+        instances = [instances]
+    for inst in instances:
+        if inst.get('status') == 'UP':
+            sys.exit(0)
+    sys.exit(1)
 except Exception:
     sys.exit(1)
 " 2>/dev/null; do
