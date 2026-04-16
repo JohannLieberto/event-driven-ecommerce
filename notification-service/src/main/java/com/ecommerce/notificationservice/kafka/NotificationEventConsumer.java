@@ -24,7 +24,7 @@ public class NotificationEventConsumer {
     }
 
     @KafkaListener(
-            topics = "payments.payment-processed",
+            topics = "payment-completed",
             groupId = "notification-service-payment-group",
             containerFactory = "paymentKafkaListenerContainerFactory"
     )
@@ -37,7 +37,7 @@ public class NotificationEventConsumer {
     }
 
     @KafkaListener(
-            topics = "shipping.shipping-scheduled",
+            topics = "shipment.scheduled",
             groupId = "notification-service-shipment-group",
             containerFactory = "shipmentKafkaListenerContainerFactory"
     )

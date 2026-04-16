@@ -9,6 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
-    Optional<Shipment> findByOrderId(Long orderId);
+    Optional<Shipment> findFirstByOrderId(Long orderId);
     List<Shipment> findByCustomerId(Long customerId);
 }

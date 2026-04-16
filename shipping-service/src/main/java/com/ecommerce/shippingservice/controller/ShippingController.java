@@ -17,7 +17,7 @@ public class ShippingController {
 
     @GetMapping("/order/{orderId}")
     public ResponseEntity<Shipment> getShipmentByOrderId(@PathVariable Long orderId) {
-        return shipmentRepository.findByOrderId(orderId)
+        return shipmentRepository.findFirstByOrderId(orderId)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }

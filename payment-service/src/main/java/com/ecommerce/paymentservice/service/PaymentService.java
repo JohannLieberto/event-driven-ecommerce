@@ -35,7 +35,7 @@ public class PaymentService {
             return;
         }
 
-        paymentRepository.findByOrderId(event.getOrderId()).ifPresentOrElse(
+        paymentRepository.findFirstByOrderId(event.getOrderId()).ifPresentOrElse(
             existing -> log.info("Payment already processed for orderId={}, skipping", event.getOrderId()),
             () -> {
                 Payment payment = new Payment();
@@ -43,6 +43,7 @@ public class PaymentService {
                 payment.setCustomerId(event.getCustomerId());
                 payment.setAmount(event.getAmount());
                 payment.setStatus("PAYMENT_SUCCESS");
+                payment.setTransactionId(java.util.UUID.randomUUID().toString());
 
                 paymentRepository.save(payment);
 

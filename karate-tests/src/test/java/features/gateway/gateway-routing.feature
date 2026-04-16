@@ -7,29 +7,34 @@ Feature: API Gateway Routing Tests
     * header Authorization = 'Bearer ' + authToken
 
   Scenario: Gateway routes to order-service health
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/orders/health'
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
 
   Scenario: Gateway routes to inventory-service health
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/inventory/health'
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
 
   Scenario: Gateway routes to payment-service health
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/payments/health'
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
 
   Scenario: Gateway routes to shipping-service health
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/shipments/health'
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
 
   Scenario: Gateway routes to notification-service health
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/notifications/health'
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
 
   Scenario: Create order via gateway end-to-end
     Given path '/api/orders'

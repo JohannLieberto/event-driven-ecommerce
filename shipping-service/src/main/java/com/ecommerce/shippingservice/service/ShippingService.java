@@ -26,7 +26,7 @@ public class ShippingService {
         }
 
         // Idempotency check
-        shipmentRepository.findByOrderId(event.getOrderId()).ifPresentOrElse(
+        shipmentRepository.findFirstByOrderId(event.getOrderId()).ifPresentOrElse(
             existing -> log.info("Shipment already exists for orderId={}, skipping", event.getOrderId()),
             () -> {
                 // First save: persist with SHIPMENT_SCHEDULED
@@ -37,12 +37,7 @@ public class ShippingService {
                 shipment.setTrackingNumber(UUID.randomUUID().toString());
                 Shipment saved = shipmentRepository.save(shipment);
 
-                // Publish event
                 shippingEventPublisher.publishShipmentScheduled(saved);
-
-                // Second save: mark as SHIPPED
-                saved.setStatus("SHIPPED");
-                shipmentRepository.save(saved);
 
                 log.info("Shipment scheduled for orderId={}", event.getOrderId());
             }

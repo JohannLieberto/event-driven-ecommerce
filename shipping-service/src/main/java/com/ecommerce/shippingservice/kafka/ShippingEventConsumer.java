@@ -20,7 +20,7 @@ public class ShippingEventConsumer {
     private ShippingService shippingService;
 
     @KafkaListener(
-        topics = "payment.completed",
+        topics = "payment-completed",
         groupId = "shipping-service-group",
         containerFactory = "kafkaListenerContainerFactory"
     )

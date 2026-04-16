@@ -35,7 +35,7 @@ class PaymentServiceTest {
         event.setCustomerId(100L);
         event.setStatus("PENDING"); // ✅ IMPORTANT
 
-        when(paymentRepository.findByOrderId(1L)).thenReturn(Optional.empty());
+        when(paymentRepository.findFirstByOrderId(1L)).thenReturn(Optional.empty());
 
         Payment savedPayment = new Payment();
         savedPayment.setId(1L);
@@ -48,7 +48,7 @@ class PaymentServiceTest {
         paymentService.processPayment(event);
 
         // ✅ FIX: only verify what actually happens
-        verify(paymentRepository).findByOrderId(1L);
+        verify(paymentRepository).findFirstByOrderId(1L);
         verify(paymentRepository, atLeastOnce()).save(any(Payment.class));
         verify(paymentEventPublisher).publishPaymentCompleted(any());
     }
@@ -64,12 +64,12 @@ class PaymentServiceTest {
         existing.setOrderId(1L);
         existing.setStatus("PAYMENT_SUCCESS");
 
-        when(paymentRepository.findByOrderId(1L)).thenReturn(Optional.of(existing));
+        when(paymentRepository.findFirstByOrderId(1L)).thenReturn(Optional.of(existing));
 
         paymentService.processPayment(event);
 
         // ✅ No save should happen
-        verify(paymentRepository).findByOrderId(1L);
+        verify(paymentRepository).findFirstByOrderId(1L);
         verify(paymentRepository, never()).save(any());
         verify(paymentEventPublisher, never()).publishPaymentCompleted(any());
     }

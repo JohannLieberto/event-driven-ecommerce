@@ -39,7 +39,7 @@ class ShippingServiceTest {
         event.setStatus("PAYMENT_SUCCESS");
         event.setTransactionId("txn-abc");
 
-        when(shipmentRepository.findByOrderId(1L)).thenReturn(Optional.empty());
+        when(shipmentRepository.findFirstByOrderId(1L)).thenReturn(Optional.empty());
 
         Shipment savedShipment = new Shipment();
         savedShipment.setId(1L);
@@ -53,7 +53,7 @@ class ShippingServiceTest {
 
         shippingService.scheduleShipment(event);
 
-        verify(shipmentRepository, times(2)).save(any(Shipment.class));
+        verify(shipmentRepository, times(1)).save(any(Shipment.class));
         verify(shippingEventPublisher, times(1)).publishShipmentScheduled(any());
     }
 
@@ -64,7 +64,7 @@ class ShippingServiceTest {
         event.setCustomerId(100L);
         event.setStatus("PAYMENT_FAILED");
 
-        when(shipmentRepository.findByOrderId(2L)).thenReturn(Optional.empty());
+        when(shipmentRepository.findFirstByOrderId(2L)).thenReturn(Optional.empty());
 
         shippingService.scheduleShipment(event);
 
@@ -81,7 +81,7 @@ class ShippingServiceTest {
 
         Shipment existing = new Shipment();
         existing.setOrderId(3L);
-        when(shipmentRepository.findByOrderId(3L)).thenReturn(Optional.of(existing));
+        when(shipmentRepository.findFirstByOrderId(3L)).thenReturn(Optional.of(existing));
 
         shippingService.scheduleShipment(event);
 

@@ -43,16 +43,13 @@ Feature: End-to-End Event-Driven Flow Tests
     And match response.status == 'PAYMENT_SUCCESS'
     * print 'Payment processed, waiting for Kafka events to propagate...'
 
-    # Step 3: Wait for async events to propagate (Kafka processing time)
-    * def sleep = function(ms){ java.lang.Thread.sleep(ms) }
-    * sleep(3000)
-
-    # Step 4: Verify Shipment was scheduled
+    # Step 3 & 4: Poll until shipment is created via Kafka event (up to 30s)
     Given url shippingServiceUrl
     And header Authorization = 'Bearer ' + authToken
+    * configure retry = { count: 10, interval: 3000 }
     Given path '/api/shipments/order/' + orderId
     When method GET
-    Then status 200
+    Then retry until responseStatus == 200
     And match response.status == 'SHIPMENT_SCHEDULED'
     And match response.trackingNumber == '#string'
     * print 'Shipment scheduled with tracking:', response.trackingNumber

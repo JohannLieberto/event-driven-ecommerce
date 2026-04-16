@@ -11,10 +11,15 @@ spring:
     password: postgres
     driver-class-name: org.postgresql.Driver
 
+  sql:
+    init:
+      mode: always
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
 
   kafka:
     bootstrap-servers: localhost:9092
