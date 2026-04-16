@@ -111,6 +111,9 @@ pipeline {
 
         stage('Start Infrastructure') {
             steps {
+                echo '=== Force removing any stale containers ==='
+                sh 'docker rm -f zookeeper kafka kafka-ui postgres eureka-server api-gateway order-service inventory-service payment-service shipping-service notification-service 2>/dev/null || true'
+
                 echo '=== Cleaning up any previous Docker Compose state ==='
                 sh 'docker compose -f docker-compose.yml down -v --remove-orphans || true'
 
