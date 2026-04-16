@@ -44,7 +44,7 @@ spring:
         enabled: false
 
 server:
-  port: 8082
+  port: 8083
 
 eureka:
   client:

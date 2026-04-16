@@ -28,7 +28,7 @@ public class InventoryEventConsumer {
     private InventoryEventPublisher inventoryEventPublisher;
 
     @KafkaListener(
-        topics = "payment.completed",
+        topics = "payment-completed",
         groupId = "inventory-service-group",
         containerFactory = "kafkaListenerContainerFactory"
     )
