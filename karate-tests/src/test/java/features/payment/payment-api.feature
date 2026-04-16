@@ -1,7 +1,10 @@
 Feature: Payment Service API Tests
 
   Background:
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
     * url paymentServiceUrl
+    * header Authorization = 'Bearer ' + authToken
 
   Scenario: Process a successful payment - should return 200 with PAYMENT_SUCCESS
     Given path '/api/payments/process'

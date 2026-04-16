@@ -2,6 +2,9 @@ Feature: API Gateway Routing Tests
 
   Background:
     * url gatewayUrl
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
+    * header Authorization = 'Bearer ' + authToken
 
   Scenario: Gateway routes to order-service health
     Given path '/api/orders/health'

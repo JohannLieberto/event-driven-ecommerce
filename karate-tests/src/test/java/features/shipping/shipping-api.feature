@@ -1,7 +1,10 @@
 Feature: Shipping Service API Tests
 
   Background:
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
     * url shippingServiceUrl
+    * header Authorization = 'Bearer ' + authToken
 
   Scenario: Get shipment by order ID - should return 200 if exists
     Given path '/api/shipments/order/1'

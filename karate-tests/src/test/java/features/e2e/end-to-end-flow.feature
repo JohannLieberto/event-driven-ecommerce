@@ -1,7 +1,10 @@
 Feature: End-to-End Event-Driven Flow Tests
 
   Background:
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
     * url gatewayUrl
+    * header Authorization = 'Bearer ' + authToken
     * def orderId = null
 
   Scenario: Full flow - create order, process payment, verify shipment and notifications
@@ -24,6 +27,7 @@ Feature: End-to-End Event-Driven Flow Tests
 
     # Step 2: Process Payment
     Given url paymentServiceUrl
+    And header Authorization = 'Bearer ' + authToken
     Given path '/api/payments/process'
     And request
       """
@@ -45,6 +49,7 @@ Feature: End-to-End Event-Driven Flow Tests
 
     # Step 4: Verify Shipment was scheduled
     Given url shippingServiceUrl
+    And header Authorization = 'Bearer ' + authToken
     Given path '/api/shipments/order/' + orderId
     When method GET
     Then status 200
@@ -54,6 +59,7 @@ Feature: End-to-End Event-Driven Flow Tests
 
     # Step 5: Verify Notifications were sent
     Given url notificationServiceUrl
+    And header Authorization = 'Bearer ' + authToken
     Given path '/api/notifications/order/' + orderId
     When method GET
     Then status 200

@@ -1,7 +1,10 @@
 Feature: Inventory Service API Tests
 
   Background:
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
     * url inventoryServiceUrl
+    * header Authorization = 'Bearer ' + authToken
     # Create a test product before each scenario so we have a known product to work with.
     # We capture the returned id so scenarios don't rely on hardcoded id=1.
     Given path '/api/inventory'

@@ -1,7 +1,10 @@
 Feature: Notification Service API Tests
 
   Background:
+    * def loginResult = call read('classpath:features/auth/auth.feature')
+    * def authToken = loginResult.authToken
     * url notificationServiceUrl
+    * header Authorization = 'Bearer ' + authToken
 
   Scenario: Get notifications by customer ID
     Given path '/api/notifications/customer/100'
