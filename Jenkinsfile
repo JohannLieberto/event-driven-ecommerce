@@ -115,6 +115,29 @@ pipeline {
             }
         }
 
+        stage('SonarCloud Analysis') {
+            steps {
+                echo '=== Running SonarCloud analysis ==='
+                withSonarQubeEnv('SonarCloud') {
+                    sh '''#!/bin/sh
+                        mvn sonar:sonar \
+                            -Dmaven.repo.local=${MAVEN_CACHE} \
+                            --no-transfer-progress \
+                            -Dsonar.branch.name=develop
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo '=== Waiting for SonarCloud Quality Gate ==='
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Start Infrastructure') {
             steps {
                 echo '=== Force removing any stale containers ==='

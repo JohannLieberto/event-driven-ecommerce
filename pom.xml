@@ -26,6 +26,20 @@
         <mockito.version>5.14.2</mockito.version>
         <!-- byte-buddy 1.15.11+ supports Java 25; backwards compatible with Java 8-21 -->
         <byte-buddy.version>1.15.11</byte-buddy.version>
+
+        <!-- SonarCloud -->
+        <sonar.projectKey>JohannLieberto_event-driven-ecommerce</sonar.projectKey>
+        <sonar.organization>johannlieberto</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <sonar.jacoco.reportPaths>
+            order-service/target/jacoco.exec,
+            inventory-service/target/jacoco.exec,
+            payment-service/target/jacoco.exec,
+            shipping-service/target/jacoco.exec,
+            notification-service/target/jacoco.exec
+        </sonar.jacoco.reportPaths>
         <sonar.coverage.exclusions>
             **/dto/**,
             **/entity/**,
@@ -49,6 +63,12 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.32</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
@@ -141,6 +161,12 @@
                         <exclude>**/*Application.class</exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <!-- SonarCloud analysis -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version>
             </plugin>
         </plugins>
     </build>
