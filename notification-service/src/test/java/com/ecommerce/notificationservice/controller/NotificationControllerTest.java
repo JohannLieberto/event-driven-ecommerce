@@ -23,8 +23,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
-                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+                // Kafka + Eureka auto-config exclusions
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration",
                 "spring.kafka.listener.auto-startup=false",
+                "spring.kafka.bootstrap-servers=localhost:9999",
+                // H2 datasource (overrides application.properties PostgreSQL URL)
+                "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
+                "spring.datasource.driver-class-name=org.h2.Driver",
+                "spring.datasource.username=sa",
+                "spring.datasource.password=",
+                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+                "spring.jpa.show-sql=false",
+                // Eureka / Spring Cloud
                 "spring.cloud.discovery.enabled=false",
                 "spring.cloud.config.enabled=false",
                 "spring.cloud.config.import-check.enabled=false",
