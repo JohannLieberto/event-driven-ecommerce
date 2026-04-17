@@ -33,13 +33,13 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.jacoco.reportPaths>
-            order-service/target/jacoco.exec,
-            inventory-service/target/jacoco.exec,
-            payment-service/target/jacoco.exec,
-            shipping-service/target/jacoco.exec,
-            notification-service/target/jacoco.exec
-        </sonar.jacoco.reportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            order-service/target/site/jacoco/jacoco.xml,
+            inventory-service/target/site/jacoco/jacoco.xml,
+            payment-service/target/site/jacoco/jacoco.xml,
+            shipping-service/target/site/jacoco/jacoco.xml,
+            notification-service/target/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
         <sonar.coverage.exclusions>
             **/dto/**,
             **/entity/**,
