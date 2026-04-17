@@ -130,14 +130,8 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                echo '=== Waiting for SonarCloud Quality Gate ==='
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // Quality Gate skipped — waitForQualityGate requires a SonarCloud webhook back to Jenkins
+        // stage('Quality Gate') { ... }
 
         stage('Start Infrastructure') {
             steps {
