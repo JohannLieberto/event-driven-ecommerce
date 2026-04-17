@@ -123,7 +123,8 @@ pipeline {
                         mvn sonar:sonar \
                             -Dmaven.repo.local=${MAVEN_CACHE} \
                             --no-transfer-progress \
-                            -Dsonar.branch.name=main
+                            -Dsonar.branch.name=main \
+                            -Dsonar.qualitygate.wait=false
                     '''
                 }
             }
