@@ -1,6 +1,6 @@
 # Event-Driven Ecommerce — Microservices Platform
 
-An event-driven microservices order processing platform built with **Spring Boot 3.2**, **Java 17**, and **Spring Cloud**. The platform demonstrates a production-grade microservices architecture featuring service discovery, centralised configuration, API gateway routing with JWT authentication, asynchronous Kafka messaging, distributed tracing, circuit breakers, Kubernetes/Helm deployment, and a full CI/CD pipeline.
+An event-driven microservices order processing platform built with **Spring Boot 3.3.5**, **Java 21**, and **Spring Cloud 2023.0.3**. The platform demonstrates a production-grade microservices architecture featuring service discovery, centralised configuration, API gateway routing with JWT authentication, asynchronous Kafka messaging, circuit breakers, Kubernetes/Helm deployment, and a full CI/CD pipeline.
 
 ---
 
@@ -8,7 +8,7 @@ An event-driven microservices order processing platform built with **Spring Boot
 
 ```
                          +------------------+
-                         |   API Gateway    |  :8080
+                         |   API Gateway    |  :8088
                          |  JWT Auth +      |
                          |  Routing (Eureka)|
                          +--------+---------+
@@ -18,8 +18,8 @@ An event-driven microservices order processing platform built with **Spring Boot
   +----+----+ +--+------+ +------+  +------+--+ +----+-------+
   |  Order  | |Inventory| |Payment|  |Shipping | |Notification|
   | Service | | Service | |Service|  | Service | |  Service   |
-  |  :8081  | |  :8082  | | :8083 |  |  :8084  | |   :8085    |
-  |(MySQL)  | |(MySQL)  | |(MySQL)|  | (MySQL) | |            |
+  |  :8081  | |  :8083  | | :8084 |  |  :8085  | |   :8086    |
+  |(Postgres)| |(Postgres)| |(Postgres)| |(Postgres)| |(Postgres)|
   +----+----+ +---------+ +---+---+  +---------+ +------------+
        |                      |
        +----------+-----------+
@@ -37,7 +37,7 @@ An event-driven microservices order processing platform built with **Spring Boot
   +------------------+     +------------------+
 ```
 
-All services register with **Eureka** for service discovery. The **Config Server** provides centralised configuration. The **API Gateway** handles routing and JWT-based authentication. Services communicate asynchronously via **Apache Kafka** (order-placed, payment-processed, shipment-dispatched events).
+All services register with **Eureka** for service discovery. The **Config Server** provides centralised configuration. The **API Gateway** handles routing and JWT-based authentication. Services communicate asynchronously via **Apache Kafka**.
 
 ---
 
@@ -45,14 +45,15 @@ All services register with **Eureka** for service discovery. The **Config Server
 
 | Service | Port | Description | Database |
 |---|---|---|---|
-| `api-gateway` | 8080 | Entry point — JWT auth + dynamic routing via Eureka | — |
-| `order-service` | 8081 | Manages customer orders (CRUD, status updates, Kafka producer) | MySQL (`order_db`) |
-| `inventory-service` | 8082 | Manages product stock levels and reservations | MySQL (`inventory_db`) |
-| `payment-service` | 8083 | Processes payments, publishes payment events to Kafka | MySQL (`payment_db`) |
-| `shipping-service` | 8084 | Handles shipment creation and dispatch events | MySQL (`shipping_db`) |
-| `notification-service` | 8085 | Consumes Kafka events and sends notifications | — |
+| `api-gateway` | 8088 | Entry point — JWT auth + dynamic routing via Eureka | — |
+| `order-service` | 8081 | Manages customer orders, publishes `orders.order-created` events | PostgreSQL (`orderdb`) |
+| `inventory-service` | 8083 | Manages product stock, reserves/releases on Kafka events | PostgreSQL (`inventorydb`) |
+| `payment-service` | 8084 | Processes payments, publishes `payment-completed` events | PostgreSQL (`paymentdb`) |
+| `shipping-service` | 8085 | Creates shipments on payment completion | PostgreSQL (`shippingdb`) |
+| `notification-service` | 8086 | Consumes all domain events and sends notifications | PostgreSQL (`notificationdb`) |
 | `eureka-server` | 8761 | Netflix Eureka service registry | — |
 | `config-server` | 8888 | Spring Cloud Config Server (native profile) | — |
+| `kafka-ui` | 9000 | Kafka topic browser (Kafbat UI) | — |
 
 ---
 
@@ -60,20 +61,19 @@ All services register with **Eureka** for service discovery. The **Config Server
 
 | Category | Technology |
 |---|---|
-| Language & Runtime | Java 17, Spring Boot 3.2.0 |
-| Microservices Framework | Spring Cloud 2023.0.0 (Eureka, Config, Gateway) |
-| Messaging | Apache Kafka (event-driven inter-service communication) |
-| Database | MySQL 8 (one database per service) |
-| ORM | Spring Data JPA + Hibernate 6 |
+| Language & Runtime | Java 21, Spring Boot 3.3.5 |
+| Microservices Framework | Spring Cloud 2023.0.3 (Eureka, Config, Gateway) |
+| Messaging | Apache Kafka + Zookeeper (Confluent 7.5.0) |
+| Database | PostgreSQL 15 (one database per service, shared instance) |
+| ORM | Spring Data JPA + Hibernate |
 | Security | JWT via `jjwt` (API Gateway), Spring Security |
-| Resilience | Resilience4J (circuit breakers, retry, rate limiting) |
-| Observability | Micrometer + Zipkin (distributed tracing), Spring Actuator |
-| API Documentation | SpringDoc OpenAPI 3 (Swagger UI) |
+| Resilience | Resilience4J (circuit breakers, retry) |
+| Observability | Spring Actuator, Micrometer, Zipkin distributed tracing |
 | Containerisation | Docker + Docker Compose |
 | Orchestration | Kubernetes + Helm 3 |
-| CI/CD | Jenkins (Jenkinsfile pipeline) |
-| Code Quality | SonarQube, JaCoCo 0.8.11 |
-| Integration Testing | Karate DSL |
+| CI/CD | Jenkins (Jenkinsfile pipeline), GitHub Webhooks |
+| Code Quality | SonarCloud, JaCoCo 0.8.12 |
+| Integration Testing | Karate DSL 1.5.1 |
 | Load Testing | k6 |
 | Build | Maven 3 (multi-module) |
 | Test DB | H2 (in-memory, unit tests only) |
@@ -84,7 +84,6 @@ All services register with **Eureka** for service discovery. The **Config Server
 
 ```
 event-driven-ecommerce/
-├── README.md                          # Project overview and setup guide
 ├── pom.xml                            # Parent Maven POM with dependency management
 ├── Jenkinsfile                        # Jenkins CI/CD pipeline definition
 ├── docker-compose.yml                 # Local full-stack Docker environment
@@ -107,12 +106,23 @@ event-driven-ecommerce/
 │           └── templates/
 │               └── deployment.yaml   # Kubernetes Deployment + Service templates
 │
-├── karate-tests/                      # Karate DSL integration test suite
+├── karate-tests/                      # Karate DSL integration & E2E test suite
+│   └── src/test/java/
+│       ├── features/
+│       │   ├── auth/                  # Auth feature tests
+│       │   ├── e2e/                   # End-to-end order flow tests
+│       │   ├── gateway/               # API gateway routing tests
+│       │   ├── inventory/             # Inventory API + reservation tests
+│       │   ├── notification/          # Notification API tests
+│       │   ├── payment/               # Payment API tests
+│       │   └── shipping/              # Shipping API tests
+│       └── com/ecommerce/karate/
+│           └── KarateTestRunner.java  # Single runner — executes all features
+│
 ├── performance-tests/
 │   └── order-flow-load-test.js        # k6 load test (100 VUs, staged ramp-up)
-├── coverage-report/                   # Aggregated JaCoCo coverage report module
 ├── jenkins/                           # Jenkins configuration
-└── docs/                              # Project documentation and diagrams
+└── docs/                              # API guide and pipeline documentation
 ```
 
 ---
@@ -122,20 +132,26 @@ event-driven-ecommerce/
 ```
 [Client] → POST /api/orders → [API Gateway] → [Order Service]
                                                      |
-                                          Publishes: order-placed
+                                    Publishes: orders.order-created
                                                      |
-                               +---------------------+--------------------+
-                               |                                          |
+                               +---------------------+---------------------+
+                               |                                           |
                     [Payment Service]                          [Inventory Service]
+                    Listens: orders.order-created              Listens: orders.order-created
                     Processes payment                          Reserves stock
-                    Publishes: payment-processed
-                               |
-                    [Shipping Service]
-                    Creates shipment
-                    Publishes: shipment-dispatched
-                               |
-                    [Notification Service]
-                    Sends order confirmation
+                    Publishes: payment-completed               Publishes: inventory.reserved
+                               |                                        or inventory.reservation.failed
+                    +----------+-----------+
+                    |                      |
+          [Shipping Service]    [Inventory Service]
+          Listens:               Listens: payment-completed
+          payment-completed      Commits or releases reservation
+          Creates shipment
+          Publishes: shipment.scheduled
+                    |
+          [Notification Service]
+          Listens: orders.order-created, payment-completed, shipment.scheduled
+          Sends notifications to customer
 ```
 
 ---
@@ -144,7 +160,8 @@ event-driven-ecommerce/
 
 ### Prerequisites
 - Docker Desktop installed and running
-- Java 17 (to build JARs before Docker build)
+- Java 21
+- Maven 3
 
 ### Steps
 
@@ -154,14 +171,15 @@ git clone https://github.com/JohannLieberto/event-driven-ecommerce.git
 cd event-driven-ecommerce
 
 # 2. Build all modules (skip tests for speed)
-mvn clean package -DskipTests
+mvn clean package -DskipTests \
+  -pl eureka-server,api-gateway,order-service,inventory-service,payment-service,shipping-service,notification-service
 
 # 3. Start the full stack
-docker-compose up --build
+docker compose up --build
 ```
 
 Services start in dependency order:
-1. MySQL databases — start first
+1. PostgreSQL — single shared instance, separate databases per service
 2. Apache Kafka + Zookeeper
 3. `eureka-server` — waits for healthy state
 4. `config-server` — waits for Eureka
@@ -173,21 +191,20 @@ Services start in dependency order:
 | Service | URL |
 |---|---|
 | Eureka Dashboard | http://localhost:8761 |
-| API Gateway | http://localhost:8080/actuator/health |
+| API Gateway | http://localhost:8088/actuator/health |
 | Order Service | http://localhost:8081/actuator/health |
-| Inventory Service | http://localhost:8082/actuator/health |
-| Payment Service | http://localhost:8083/actuator/health |
-| Shipping Service | http://localhost:8084/actuator/health |
-| Notification Service | http://localhost:8085/actuator/health |
-| Zipkin Tracing UI | http://localhost:9411 |
-| Swagger UI (Order) | http://localhost:8081/swagger-ui.html |
+| Inventory Service | http://localhost:8083/actuator/health |
+| Payment Service | http://localhost:8084/actuator/health |
+| Shipping Service | http://localhost:8085/actuator/health |
+| Notification Service | http://localhost:8086/actuator/health |
+| Kafka UI | http://localhost:9000 |
 
 ```bash
 # Stop all containers
-docker-compose down
+docker compose down
 
 # Stop and remove volumes (wipes DB data)
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -195,7 +212,7 @@ docker-compose down -v
 ## Kubernetes Deployment (Helm)
 
 ```bash
-# Deploy all services to a local Kubernetes cluster
+# Deploy all services to a Kubernetes cluster
 helm install ecommerce ./k8s/helm/ecommerce
 
 # Upgrade after changes
@@ -215,57 +232,57 @@ Resource limits are configured per service in [`k8s/helm/ecommerce/values.yaml`]
 
 ## CI/CD Pipeline (Jenkins)
 
-The [`Jenkinsfile`](./Jenkinsfile) defines a fully automated pipeline:
+The [`Jenkinsfile`](./Jenkinsfile) defines a fully automated pipeline triggered via GitHub webhook on push:
 
 | Stage | Description |
 |---|---|
 | Checkout | Pull source from GitHub |
-| Build | `mvn clean compile -DskipTests` — compile all modules |
-| Unit Tests | `mvn test` — run unit tests, publish Surefire reports |
-| Code Quality | SonarQube static analysis + quality gate |
-| Integration Tests | Karate DSL end-to-end API tests |
-| Package | `mvn package -DskipTests` — build executable JARs |
-| Docker Build | Build and tag Docker images per service |
-| Deploy | Push images and deploy to target environment |
-
-Test reports published from `**/target/surefire-reports/TEST-*.xml`. Coverage reports generated by JaCoCo at `coverage-report/target/site/jacoco-aggregate/`.
-
----
-
-## Performance Testing (k6)
-
-```bash
-# Run load test — 100 virtual users, staged ramp-up
-k6 run performance-tests/order-flow-load-test.js
-```
-
-The load test covers the full order flow (place order → payment → inventory check) with defined thresholds for p95 latency and error rate.
+| Build All Services | `mvn clean package -DskipTests` — compile all modules in parallel |
+| Unit Tests | Run per-service unit tests in parallel; publish Surefire + JaCoCo reports |
+| SonarCloud Analysis | Static analysis — results published to SonarCloud |
+| Start Infrastructure | Docker Compose up — waits for Kafka, PostgreSQL, and all services to be healthy |
+| Karate API Tests | Full E2E and integration test suite via Karate DSL; publish HTML report |
+| Stop Infrastructure | Docker Compose down |
+| Docker Build & Push | Build and push all service images to DockerHub (`hiteshkhade/*`) |
+| Pull & Run from DockerHub | Pull latest images and verify containers start cleanly |
 
 ---
 
 ## Running Tests
 
 ```bash
-# Run all tests with coverage
-mvn clean verify
+# Unit tests for all services
+mvn test -pl order-service,inventory-service,payment-service,shipping-service,notification-service
 
-# Individual module tests
-mvn clean verify -pl order-service
-mvn clean verify -pl inventory-service
+# Unit tests for a single service
+mvn test -pl order-service
 
-# Integration tests (Karate)
-mvn verify -pl karate-tests
+# Karate integration/E2E tests (requires running stack)
+mvn verify -pl karate-tests -Dskip.karate=false -Dkarate.env=ci
 
-# Coverage reports
-# Aggregated:  coverage-report/target/site/jacoco-aggregate/index.html
-# Per-service: <service>/target/site/jacoco/index.html
+# Coverage reports per service
+# open <service>/target/site/jacoco/index.html
 ```
+
+---
+
+## Performance Testing (k6)
+
+```bash
+# Run load test — staged ramp-up to 100 virtual users
+k6 run performance-tests/order-flow-load-test.js
+
+# Against a remote target (e.g. EC2)
+k6 run -e BASE_URL=http://<ec2-ip>:8088 performance-tests/order-flow-load-test.js
+```
+
+The load test ramps up to 100 VUs over 5 minutes covering the full order flow (place order → inventory check → payment).
 
 ---
 
 ## API Endpoints
 
-All requests are routed via the API Gateway at `http://localhost:8080`. JWT token required in `Authorization: Bearer <token>` header.
+All requests are routed via the API Gateway at `http://localhost:8088`. JWT token required in `Authorization: Bearer <token>` header for protected routes.
 
 ### Order Service (`/api/orders`)
 
@@ -275,41 +292,48 @@ All requests are routed via the API Gateway at `http://localhost:8080`. JWT toke
 | `GET` | `/api/orders/{id}` | Get order by ID |
 | `GET` | `/api/orders/customer/{customerId}` | Get all orders for a customer |
 | `PUT` | `/api/orders/{id}/status` | Update order status |
+| `GET` | `/api/orders/health` | Health check |
 
 ### Inventory Service (`/api/inventory`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/inventory` | List all inventory items (paginated) |
+| `GET` | `/api/inventory` | List all inventory items |
 | `GET` | `/api/inventory/{productId}` | Get product by ID |
 | `POST` | `/api/inventory` | Add new inventory item |
 | `PUT` | `/api/inventory/{productId}` | Update product / stock level |
 | `DELETE` | `/api/inventory/{productId}` | Remove inventory item |
+| `GET` | `/api/inventory/health` | Health check |
 
 ### Payment Service (`/api/payments`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/payments` | Process a payment for an order |
-| `GET` | `/api/payments/{orderId}` | Get payment status for an order |
+| `POST` | `/api/payments/process` | Process a payment for an order |
+| `GET` | `/api/payments/health` | Health check |
 
-### Shipping Service (`/api/shipping`)
+### Shipping Service (`/api/shipments`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/shipping` | Create a shipment |
-| `GET` | `/api/shipping/{orderId}` | Get shipment status for an order |
+| `GET` | `/api/shipments/order/{orderId}` | Get shipment by order ID |
+| `GET` | `/api/shipments/health` | Health check |
 
-Full interactive API documentation available via Swagger UI at `http://localhost:<service-port>/swagger-ui.html`.
+### Notification Service (`/api/notifications`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/notifications/customer/{customerId}` | Get notifications by customer |
+| `GET` | `/api/notifications/order/{orderId}` | Get notifications by order |
+| `GET` | `/api/notifications/health` | Health check |
 
 ---
 
-## Resilience & Observability
+## Resilience
 
-- **Circuit Breakers** — Resilience4J circuit breakers on all inter-service REST calls; fallback responses configured per service
-- **Distributed Tracing** — Micrometer + Zipkin; every request receives a trace ID propagated across all service hops; view at http://localhost:9411
-- **Health Checks** — Spring Actuator `/actuator/health` on all services
-- **Metrics** — Actuator `/actuator/metrics` and `/actuator/prometheus` endpoints
+- **Circuit Breakers** — Resilience4J circuit breakers on inter-service REST calls (e.g. Order Service → Inventory Client); fallback responses configured
+- **Retry** — Exponential backoff retry on transient failures
+- **Health Checks** — Spring Actuator `/actuator/health` on all services; used by Docker Compose and Kubernetes liveness/readiness probes
 
 ---
 
@@ -319,9 +343,6 @@ Full interactive API documentation available via Swagger UI at `http://localhost
 |---|---|
 | `main` | Stable, production-ready code |
 | `develop` | Integration branch — all features merge here first |
-| `feature/US*` | Individual user story feature branches |
-| `fix/*` | Bug fix branches |
-| `integration/sprint*` | Sprint demo / integration branches |
 
 ---
 
