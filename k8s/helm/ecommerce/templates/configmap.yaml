@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  EUREKA_SERVER_URL: "http://{{ .Release.Name }}-eureka-server:{{ .Values.eurekaServer.service.port }}/eureka"
+  KAFKA_BOOTSTRAP_SERVERS: "{{ .Release.Name }}-kafka:{{ .Values.kafka.service.port }}"
+  POSTGRES_HOST: "{{ .Release.Name }}-postgres"
+  POSTGRES_PORT: "{{ .Values.postgres.service.port }}"
+  POSTGRES_USER: {{ .Values.postgres.auth.username | quote }}
+  SPRING_PROFILES_ACTIVE: "prod"

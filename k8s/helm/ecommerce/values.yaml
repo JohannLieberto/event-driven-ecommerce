@@ -1,16 +1,12 @@
-# Default values for ecommerce Helm chart
-# Override these in values-prod.yaml or via --set flags
-
 global:
-  imageRegistry: ""
+  imageRegistry: "hiteshkhade"
   imagePullSecrets: []
 
-# Eureka Server
 eurekaServer:
   image:
-    repository: event-driven-ecommerce-eureka-server
+    repository: hiteshkhade/eureka-server
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
@@ -23,16 +19,16 @@ eurekaServer:
       memory: "512Mi"
       cpu: "500m"
 
-# API Gateway
 apiGateway:
   image:
-    repository: event-driven-ecommerce-api-gateway
+    repository: hiteshkhade/api-gateway
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: LoadBalancer
-    port: 8080
+    port: 8088
+    targetPort: 8080
   resources:
     requests:
       memory: "256Mi"
@@ -41,16 +37,20 @@ apiGateway:
       memory: "512Mi"
       cpu: "500m"
 
-# Order Service
 orderService:
   image:
-    repository: event-driven-ecommerce-order-service
+    repository: hiteshkhade/order-service
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
     port: 8081
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 70
   resources:
     requests:
       memory: "256Mi"
@@ -59,16 +59,20 @@ orderService:
       memory: "512Mi"
       cpu: "500m"
 
-# Inventory Service
 inventoryService:
   image:
-    repository: event-driven-ecommerce-inventory-service
+    repository: hiteshkhade/inventory-service
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
     port: 8083
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 70
   resources:
     requests:
       memory: "256Mi"
@@ -77,12 +81,11 @@ inventoryService:
       memory: "512Mi"
       cpu: "500m"
 
-# Payment Service
 paymentService:
   image:
-    repository: event-driven-ecommerce-payment-service
+    repository: hiteshkhade/payment-service
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
@@ -95,12 +98,11 @@ paymentService:
       memory: "512Mi"
       cpu: "500m"
 
-# Shipping Service
 shippingService:
   image:
-    repository: event-driven-ecommerce-shipping-service
+    repository: hiteshkhade/shipping-service
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
@@ -113,12 +115,11 @@ shippingService:
       memory: "512Mi"
       cpu: "500m"
 
-# Notification Service
 notificationService:
   image:
-    repository: event-driven-ecommerce-notification-service
+    repository: hiteshkhade/notification-service
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   replicaCount: 1
   service:
     type: ClusterIP
@@ -131,44 +132,32 @@ notificationService:
       memory: "512Mi"
       cpu: "500m"
 
-# PostgreSQL
 postgres:
-  enabled: true
   image:
     repository: postgres
     tag: "15-alpine"
-  auth:
-    username: postgres
-    password: postgres
-    databases:
-      - orderdb
-      - inventorydb
-      - paymentdb
-      - shippingdb
-      - notificationdb
   service:
     port: 5432
   persistence:
     enabled: true
     size: 5Gi
+    storageClass: ""
+  auth:
+    username: postgres
+    password: postgres
 
-# Kafka
 kafka:
-  enabled: true
   image:
     repository: confluentinc/cp-kafka
     tag: "7.5.0"
   service:
     port: 9092
-  zookeeper:
-    enabled: true
 
-# Zipkin
-zipkin:
-  enabled: true
+zookeeper:
   image:
-    repository: openzipkin/zipkin
-    tag: latest
+    repository: confluentinc/cp-zookeeper
+    tag: "7.5.0"
   service:
-    type: ClusterIP
-    port: 9411
+    port: 2181
+
+jwtSecret: "changeme-use-k8s-secret-in-production"

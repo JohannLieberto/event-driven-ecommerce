@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  labels:
+    {{- include "ecommerce.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api/orders
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-order-service
+                port:
+                  number: {{ .Values.orderService.service.port }}
+          - path: /api/inventory
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-inventory-service
+                port:
+                  number: {{ .Values.inventoryService.service.port }}
+          - path: /api/payments
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-payment-service
+                port:
+                  number: {{ .Values.paymentService.service.port }}
+          - path: /api/shipments
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-shipping-service
+                port:
+                  number: {{ .Values.shippingService.service.port }}
+          - path: /api/notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-notification-service
+                port:
+                  number: {{ .Values.notificationService.service.port }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-api-gateway
+                port:
+                  number: {{ .Values.apiGateway.service.port }}
