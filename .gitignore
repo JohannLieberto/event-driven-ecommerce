@@ -18,12 +18,11 @@ Thumbs.db
 *.jar
 *.class
 
-.idea/
-target/
-.DS_Store
-
-*.class
-.code-review-graph-pkgs/
+# Code review graph tool
 .code-review-graph/
+.code-review-graph-pkgs/
 .code-review-graph-venv/
 .code-review-graph-venv314/
+
+# Claude Code
+.claude/

@@ -109,7 +109,7 @@ public class InventoryService {
                     request.getQuantity(), before,
                     updated.getStockQuantity(), request.getOrderId());
 
-            log.info("✅ Stock reserved for orderId={}", request.getOrderId());
+            log.info("Stock reserved for orderId={}", request.getOrderId());
 
             return mapToResponse(updated);
 
@@ -169,11 +169,11 @@ public class InventoryService {
     }
 
     public void handlePaymentProcessed(PaymentProcessedEvent event) {
-        log.info("💰 Payment processed for orderId={}", event.getOrderId());
+        log.info("Payment processed for orderId={}", event.getOrderId());
     }
 
     public void handlePaymentFailed(PaymentFailedEvent event) {
-        log.info("❌ Payment failed, releasing stock for orderId={}", event.getOrderId());
+        log.info("Payment failed, releasing stock for orderId={}", event.getOrderId());
 
         for (PaymentFailedEvent.OrderItem item : event.getItems()) {
             StockReservationRequest req = new StockReservationRequest();

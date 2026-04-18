@@ -23,28 +23,24 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // Create Order
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
         OrderResponse response = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Get Order by ID
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable Long orderId) {
         OrderResponse response = orderService.getOrderById(orderId);
         return ResponseEntity.ok(response);
     }
 
-    // Get Orders by Customer
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getOrdersByCustomer(@RequestParam Long customerId) {
         List<OrderResponse> orders = orderService.getOrdersByCustomerId(customerId);
         return ResponseEntity.ok(orders);
     }
 
-    // Health check
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));

@@ -23,10 +23,9 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    // Paths that do NOT require a JWT token.
-    // NOTE: /api is open because this is an internal dev/test environment without auth.
-    // IMPORTANT: use startsWith matching, so entries must NOT have a trailing slash
-    // e.g. "/api" matches "/api/orders", "/api/inventory/health" etc.
+    // Paths that do not require a JWT token.
+    // /api is open for internal dev environment. Entries must not have a trailing slash
+    // as matching uses startsWith — "/api" covers "/api/orders", "/api/inventory" etc.
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/login",
             "/auth/register",

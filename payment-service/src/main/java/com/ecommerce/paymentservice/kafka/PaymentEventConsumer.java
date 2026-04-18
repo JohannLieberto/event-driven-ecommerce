@@ -20,7 +20,7 @@ public class PaymentEventConsumer {
     private PaymentService paymentService;
 
     @KafkaListener(
-            topics = "orders.order-created",   // ✅ FIXED
+            topics = "orders.order-created",
             groupId = "payment-service-group",
             containerFactory = "kafkaListenerContainerFactory"
     )

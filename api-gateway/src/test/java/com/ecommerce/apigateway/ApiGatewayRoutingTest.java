@@ -8,11 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-/**
- * Gateway routing tests — require real downstream services running.
- * These are end-to-end tests, disabled for unit/CI runs.
- * Run manually with: mvn test -Dtest=ApiGatewayRoutingTest
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
