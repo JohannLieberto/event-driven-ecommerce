@@ -23,3 +23,7 @@ target/
 .DS_Store
 
 *.class
+.code-review-graph-pkgs/
+.code-review-graph/
+.code-review-graph-venv/
+.code-review-graph-venv314/
