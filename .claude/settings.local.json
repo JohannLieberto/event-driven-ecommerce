@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(sed -n '1,30p' c:/Users/hites/event-driven-ecommerce/payment-service/pom.xml)",
-      "Bash(sed -n '1,25p' c:/Users/hites/event-driven-ecommerce/shipping-service/pom.xml)"
-    ]
-  }
-}
